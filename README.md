@@ -6,6 +6,8 @@ No ads. No permissions. No analytics. No internet. Just the game.
 
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.github.johnathan.minesweeper)
 
+> F-Droid listing coming soon — submission in progress.
+
 ---
 
 Every other Minesweeper on Android is either a privacy nightmare stuffed with ads and trackers, or a bare-bones port that looks like it was built in 2009. This one is neither.
