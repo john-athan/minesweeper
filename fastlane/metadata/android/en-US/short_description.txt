@@ -1,1 +1,1 @@
-Beautiful, private Minesweeper. No ads, no trackers. Fog of war.
+Beautiful Minesweeper. No ads, no trackers, no permissions.
