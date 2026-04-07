@@ -20,7 +20,7 @@ Repo: https://github.com/john-athan/minesweeper
 Builds:
   - versionName: '1.0'
     versionCode: 1
-    commit: c5058db280a4c08a4e22a772e8ad4844cdafceec
+    commit: 4161ca4d7b54282121cf3188a3740bdb168bb6d5
     subdir: app
     gradle:
       - yes
