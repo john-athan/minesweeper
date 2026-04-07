@@ -1,0 +1,26 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local config
+local.properties
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# Keys / secrets
+*.jks
+*.keystore
+release.properties
+signing.properties
+
+# Generated
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof

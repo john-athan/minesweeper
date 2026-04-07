@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+
+    <!-- Horizontal spike -->
+    <path
+        android:pathData="M16,51 L92,51 L92,57 L16,57 Z"
+        android:fillColor="#4ECDC4"/>
+    <!-- Vertical spike -->
+    <path
+        android:pathData="M51,16 L57,16 L57,92 L51,92 Z"
+        android:fillColor="#4ECDC4"/>
+    <!-- Diagonal spikes (NW-SE and NE-SW) -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:rotation="45">
+        <path
+            android:pathData="M16,51 L92,51 L92,57 L16,57 Z"
+            android:fillColor="#4ECDC4"/>
+        <path
+            android:pathData="M51,16 L57,16 L57,92 L51,92 Z"
+            android:fillColor="#4ECDC4"/>
+    </group>
+
+    <!-- Mine body -->
+    <path
+        android:pathData="M54,30 A24,24 0 1,0 54,78 A24,24 0 1,0 54,30 Z"
+        android:fillColor="#4ECDC4"/>
+
+    <!-- Fuse / wick -->
+    <path
+        android:pathData="M66,32 Q74,18 78,22"
+        android:strokeColor="#FFD700"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"/>
+
+    <!-- Shine highlight -->
+    <path
+        android:pathData="M44,38 A5,5 0 1,0 44,48 A5,5 0 1,0 44,38 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.55"/>
+</vector>

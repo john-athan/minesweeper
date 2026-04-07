@@ -1,0 +1,4 @@
+# Place PNG screenshots here named 01.png, 02.png, etc.
+# F-Droid displays up to 8 screenshots.
+# Recommended size: 1080×1920 px (portrait) or 1920×1080 (landscape).
+# Capture them from the emulator: adb exec-out screencap -p > 01.png

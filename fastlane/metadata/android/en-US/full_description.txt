@@ -1,0 +1,25 @@
+Every other Minesweeper on Android is either a privacy nightmare stuffed with ads and trackers, or a bare-bones port that looks like it was built in 2009. This one is neither.
+
+No ads. No permissions. No analytics. No internet. Just the game.
+
+Built with Jetpack Compose and Material 3 — it looks and feels like a first-party Google app. Material You dynamic colour adapts the entire palette to your wallpaper on Android 12+.
+
+The grid always fills the screen. Cells scale to any device. No zooming, no tiny tap targets.
+
+<b>Three modes that are mechanically distinct, not just bigger grids</b>
+
+• <b>Easy</b> — 9×9, classic rules, guaranteed safe first click, full chord support
+• <b>Medium</b> — 12×12, higher mine density, 5-minute countdown, only your clicked cell is safe at the start
+• <b>Hard</b> — 14×14, no safe start, chord disabled, 3-minute countdown, and <b>fog of war</b>: revealed cells fade out after 6 seconds and you must hold the entire mine map in your head
+
+Fog of war is a novel mechanic that does not exist in any other Minesweeper app.
+
+<b>Polish</b>
+• Ripple flood-fill — empty areas reveal outward in animated waves
+• Spring bounce on every cell open and flag placement
+• Screen shake on game over
+• LED-style mine counter and timer, blinks red under 30 seconds
+• Haptic feedback on every interaction
+• Deep-space dark theme with vibrant number colours
+
+<b>100% free and open source</b> — GPLv3, no ads, no tracking, no analytics.
