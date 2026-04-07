@@ -1,1 +1,1 @@
-Beautiful, private Minesweeper. No ads, no trackers. Fog of war, spring animations.
+Beautiful, private Minesweeper. No ads, no trackers. Fog of war.
