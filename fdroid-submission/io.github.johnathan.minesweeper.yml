@@ -2,10 +2,7 @@
 # F-Droid metadata for Minesweeper
 #
 # This file belongs in the fdroiddata repository, not in this app repo.
-# Steps to submit:
-#   1. Fork https://gitlab.com/fdroid/fdroiddata
-#   2. Copy this file to  metadata/io.github.johnathan.minesweeper.yml
-#   3. Open a merge request titled "Add io.github.johnathan.minesweeper"
+# Submitted at: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/36056
 # ────────────────────────────────────────────────────────────────────────────
 
 Categories:
@@ -14,43 +11,21 @@ License: GPL-3.0-or-later
 SourceCode: https://github.com/john-athan/minesweeper
 IssueTracker: https://github.com/john-athan/minesweeper/issues
 Changelog: https://github.com/john-athan/minesweeper/releases
-Repo: https://github.com/john-athan/minesweeper
 
 AutoName: Minesweeper
-CurrentVersion: '1.0'
-CurrentVersionCode: 1
 
-Description: |-
-    The only beautiful, private, mechanically interesting Minesweeper on Android.
-
-    Every other Minesweeper is either a privacy nightmare stuffed with ads and
-    trackers, or a bare-bones port that looks like it was built in 2009. This one
-    is neither. No ads, no permissions, no analytics, no internet — just the game.
-
-    Built with Jetpack Compose and Material 3. Material You dynamic colour adapts
-    the entire palette to your wallpaper on Android 12+. Spring physics, ripple
-    flood-fill animations, haptic feedback, screen shake on game over.
-
-    The grid always fills the screen — cells scale to any device, no tiny tap
-    targets, no zooming required.
-
-    Three difficulty modes that are mechanically distinct, not just bigger grids:
-
-    Easy — 9×9, classic rules, guaranteed safe first click.
-
-    Medium — 12×12, higher mine density, 5-minute countdown timer, only your
-    clicked cell is safe at the start.
-
-    Hard — 14×14, no safe start, no chord reveal, 3-minute countdown, and fog of
-    war: revealed cells fade out after 6 seconds and you must hold the entire mine
-    map in your head. This mechanic does not exist in any other Minesweeper app.
+RepoType: git
+Repo: https://github.com/john-athan/minesweeper
 
 Builds:
   - versionName: '1.0'
     versionCode: 1
-    commit: v1.0
+    commit: c5058db280a4c08a4e22a772e8ad4844cdafceec
+    subdir: app
     gradle:
       - yes
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
+CurrentVersion: '1.0'
+CurrentVersionCode: 1
