@@ -71,4 +71,6 @@ All dependencies are Apache 2.0 licensed (AndroidX / Jetpack). No third-party li
 
 ## License
 
+[![GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](https://spdx.org/licenses/GPL-3.0-or-later.html)
+
 GPL-3.0-or-later — see [LICENSE](LICENSE).
