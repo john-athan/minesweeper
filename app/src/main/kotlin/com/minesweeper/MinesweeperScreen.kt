@@ -45,6 +45,26 @@ private val NUM_COLORS = arrayOf(
 fun MinesweeperApp(game: GameEngine) {
     val haptic = LocalHapticFeedback.current
 
+    // Custom-game config (issue #5). Remembers the last-used settings so the
+    // dialog reopens where you left it.
+    var showCustomDialog by remember { mutableStateOf(false) }
+    var lastCustom by remember {
+        mutableStateOf(Difficulty.custom(size = 16, mines = 40, fog = false, safeStart = true))
+    }
+
+    if (showCustomDialog) {
+        CustomConfigDialog(
+            initial   = lastCustom,
+            onDismiss = { showCustomDialog = false },
+            onConfirm = { cfg ->
+                lastCustom       = cfg
+                showCustomDialog = false
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                game.newGame(cfg)
+            },
+        )
+    }
+
     // Screen shake on loss
     val shakeX = remember { Animatable(0f) }
     LaunchedEffect(game.status) {
@@ -80,10 +100,14 @@ fun MinesweeperApp(game: GameEngine) {
             })
 
             Spacer(Modifier.height(4.dp))
-            DifficultyBar(selected = game.difficulty, onSelect = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                game.newGame(it)
-            })
+            DifficultyBar(
+                selected = game.difficulty,
+                onSelect = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    game.newGame(it)
+                },
+                onCustomClick = { showCustomDialog = true },
+            )
             Spacer(Modifier.height(4.dp))
 
             // Fixed-height reserved slot for the status banner so the grid
@@ -229,60 +253,183 @@ private fun LedDisplay(text: String, color: Color) {
 // ── Difficulty bar ────────────────────────────────────────────────────────────
 
 @Composable
-private fun DifficultyBar(selected: Difficulty, onSelect: (Difficulty) -> Unit) {
+private fun DifficultyBar(
+    selected: Difficulty,
+    onSelect: (Difficulty) -> Unit,
+    onCustomClick: () -> Unit,
+) {
     Row(
         modifier              = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Difficulty.entries.forEach { diff ->
-            val active = selected == diff
-            val bg by animateColorAsState(
-                if (active) CyberCyan else Color(0xFF1B2B3C), tween(250), label = "bg"
+        Difficulty.presets.forEach { diff ->
+            DifficultyTab(
+                label    = diff.label,
+                active   = selected == diff,
+                subtitle = buildList {
+                    if (diff.countdownSeconds != null) add("⏱")
+                    if (diff.fogSeconds != null)       add("👁")
+                    if (diff.safeRadius < 0)           add("⚡")
+                }.ifEmpty { listOf("${diff.mines}💣") }.joinToString(""),
+                onTap    = { onSelect(diff) },
             )
-            val fg by animateColorAsState(
-                if (active) SpaceBlack else MutedBlue, tween(250), label = "fg"
+        }
+        // Custom tab (issue #5) — opens the config dialog. Highlighted whenever
+        // a user-defined game is active.
+        DifficultyTab(
+            label    = "Custom",
+            active   = selected.isCustom,
+            subtitle = "⚙",
+            onTap    = onCustomClick,
+        )
+    }
+}
+
+@Composable
+private fun RowScope.DifficultyTab(
+    label: String,
+    active: Boolean,
+    subtitle: String,
+    onTap: () -> Unit,
+) {
+    val bg by animateColorAsState(
+        if (active) CyberCyan else Color(0xFF1B2B3C), tween(250), label = "bg"
+    )
+    val fg by animateColorAsState(
+        if (active) SpaceBlack else MutedBlue, tween(250), label = "fg"
+    )
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+            .pointerInput(Unit) { detectTapGestures(onTap = { onTap() }) }
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text       = label,
+                color      = fg,
+                fontSize   = 13.sp,
+                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
             )
-            val modifiers = buildList {
-                if (diff.countdownSeconds != null) add("⏱")
-                if (diff.fogSeconds != null)       add("👁")
-                if (diff.safeRadius < 0)           add("⚡")
-            }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(bg)
-                    .pointerInput(diff) { detectTapGestures(onTap = { onSelect(diff) }) }
-                    .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text       = diff.label,
-                        color      = fg,
-                        fontSize   = 13.sp,
-                        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                    )
-                    if (modifiers.isEmpty()) {
-                        Text(
-                            text     = "${diff.mines}💣",
-                            color    = fg.copy(alpha = 0.65f),
-                            fontSize = 10.sp,
-                        )
-                    } else {
-                        Text(
-                            text     = modifiers.joinToString(""),
-                            color    = fg.copy(alpha = 0.8f),
-                            fontSize = 11.sp,
-                        )
-                    }
-                }
-            }
+            Text(
+                text     = subtitle,
+                color    = fg.copy(alpha = 0.75f),
+                fontSize = 11.sp,
+            )
         }
     }
 }
+
+// ── Custom config dialog (issue #5) ─────────────────────────────────────────────
+
+@Composable
+private fun CustomConfigDialog(
+    initial: Difficulty,
+    onDismiss: () -> Unit,
+    onConfirm: (Difficulty) -> Unit,
+) {
+    var size      by remember { mutableStateOf(initial.cols) }
+    var mines     by remember { mutableStateOf(initial.mines) }
+    var fog       by remember { mutableStateOf(initial.fogSeconds != null) }
+    var safeStart by remember { mutableStateOf(initial.safeRadius >= 0) }
+
+    val maxMines = (size * size - 1).coerceAtLeast(1)
+    // Shrinking the grid can push the mine count past the new maximum; pull it back.
+    LaunchedEffect(size) { if (mines > maxMines) mines = maxMines }
+    val safeMines = mines.coerceIn(1, maxMines)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor   = NavyBlue,
+        titleContentColor   = SoftWhite,
+        textContentColor    = MutedBlue,
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm(Difficulty.custom(size, safeMines, fog, safeStart))
+            }) { Text("Start", color = CyberCyan, fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MutedBlue) }
+        },
+        title = { Text("Custom Game") },
+        text  = {
+            Column {
+                SliderRow(
+                    label = "Grid size",
+                    value = "$size × $size",
+                ) {
+                    Slider(
+                        value         = size.toFloat(),
+                        onValueChange = { size = it.roundToInt() },
+                        valueRange    = 5f..20f,
+                        steps         = 14,
+                        colors        = sliderColors(),
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                SliderRow(
+                    label = "Mines",
+                    value = "$safeMines  (${(safeMines * 100 / (size * size))}%)",
+                ) {
+                    Slider(
+                        value         = safeMines.toFloat(),
+                        onValueChange = { mines = it.roundToInt() },
+                        valueRange    = 1f..maxMines.toFloat(),
+                        colors        = sliderColors(),
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                ToggleRow("Fog of war", fog) { fog = it }
+                ToggleRow("Safe first tap", safeStart) { safeStart = it }
+            }
+        },
+    )
+}
+
+@Composable
+private fun SliderRow(label: String, value: String, slider: @Composable () -> Unit) {
+    Row(
+        modifier              = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, color = SoftWhite, fontSize = 14.sp)
+        Text(value, color = CyberCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+    }
+    slider()
+}
+
+@Composable
+private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier              = Modifier.fillMaxWidth(),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, color = SoftWhite, fontSize = 14.sp)
+        Switch(
+            checked         = checked,
+            onCheckedChange = onChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor   = SpaceBlack,
+                checkedTrackColor   = CyberCyan,
+                uncheckedThumbColor = MutedBlue,
+                uncheckedTrackColor = Color(0xFF1B2B3C),
+            ),
+        )
+    }
+}
+
+@Composable
+private fun sliderColors() = SliderDefaults.colors(
+    thumbColor       = CyberCyan,
+    activeTrackColor = CyberCyan,
+    inactiveTrackColor = Color(0xFF1B2B3C),
+)
 
 // ── Status banner ─────────────────────────────────────────────────────────────
 
@@ -420,21 +567,9 @@ private fun CellView(
                     )
                 }
 
-                // ── Unrevealed – flagged ──────────────────────────────────────
-                !cell.isRevealed && cell.isFlagged -> {
-                    drawCellShadow(w, h, cr)
-                    drawRoundRect(
-                        brush = Brush.linearGradient(
-                            colors = listOf(Color(0xFF1E3D28), Color(0xFF162A1C)),
-                            start  = Offset(0f, 0f), end = Offset(w, h),
-                        ),
-                        size         = Size(w - 1.5f, h - 1.5f),
-                        cornerRadius = cr,
-                    )
-                    drawHighlightEdges(w, h)
-                }
-
-                // ── Unrevealed – normal ───────────────────────────────────────
+                // ── Unrevealed (flagged or not) ───────────────────────────────
+                // Flagged cells keep the normal cell background so only the flag
+                // icon stands out — no odd tint behind the marker (issue #1).
                 !cell.isRevealed -> {
                     drawCellShadow(w, h, cr)
                     drawRoundRect(

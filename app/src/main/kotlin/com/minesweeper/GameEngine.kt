@@ -5,7 +5,7 @@ import kotlinx.coroutines.*
 
 // ── Difficulty ────────────────────────────────────────────────────────────────
 
-enum class Difficulty(
+data class Difficulty(
     val rows: Int,
     val cols: Int,
     val mines: Int,
@@ -17,13 +17,45 @@ enum class Difficulty(
     val countdownSeconds: Int?,
     /** null = no fog; non-null = cells re-hide after this many seconds */
     val fogSeconds: Int?,
+    /** true for user-defined games built via [custom] */
+    val isCustom: Boolean = false,
 ) {
-    EASY  (9,  9,  10, "Easy",
-        safeRadius = 1, chordEnabled = true,  countdownSeconds = null, fogSeconds = null),
-    MEDIUM(12, 12, 30, "Medium",
-        safeRadius = 0, chordEnabled = true,  countdownSeconds = 300,  fogSeconds = null),
-    HARD  (14, 14, 50, "Hard",
-        safeRadius = -1, chordEnabled = false, countdownSeconds = 180,  fogSeconds = 6),
+    companion object {
+        val EASY = Difficulty(
+            9, 9, 10, "Easy",
+            safeRadius = 1, chordEnabled = true, countdownSeconds = null, fogSeconds = null)
+        val MEDIUM = Difficulty(
+            12, 12, 30, "Medium",
+            safeRadius = 0, chordEnabled = true, countdownSeconds = 300, fogSeconds = null)
+        val HARD = Difficulty(
+            14, 14, 50, "Hard",
+            safeRadius = -1, chordEnabled = false, countdownSeconds = 180, fogSeconds = 6)
+
+        /** Built-in presets, shown as fixed tabs in the difficulty bar. */
+        val presets = listOf(EASY, MEDIUM, HARD)
+
+        /**
+         * Build a user-defined game (issue #5). Grid is [size]×[size];
+         * mines clamped to leave at least one safe cell. Chord stays on and
+         * there's no countdown — custom is about layout, not time pressure.
+         */
+        fun custom(
+            size: Int,
+            mines: Int,
+            fog: Boolean,
+            safeStart: Boolean,
+        ) = Difficulty(
+            rows             = size,
+            cols             = size,
+            mines            = mines.coerceIn(1, size * size - 1),
+            label            = "Custom",
+            safeRadius       = if (safeStart) 1 else -1,
+            chordEnabled     = true,
+            countdownSeconds = null,
+            fogSeconds       = if (fog) 6 else null,
+            isCustom         = true,
+        )
+    }
 }
 
 // ── Cell ──────────────────────────────────────────────────────────────────────
