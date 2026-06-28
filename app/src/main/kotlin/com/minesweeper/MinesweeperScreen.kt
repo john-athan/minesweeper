@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.hapticfeedback.*
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
@@ -241,13 +242,78 @@ private fun LedDisplay(text: String, color: Color) {
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFF040710))
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
-        Text("888", fontFamily = FontFamily.Monospace, fontSize = 20.sp,
-            color = Color(0xFF1A1A1A), fontWeight = FontWeight.Bold)
-        Text(text, fontFamily = FontFamily.Monospace, fontSize = 20.sp,
-            color = color, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        SevenSegment(text = text, color = color)
     }
+}
+
+// ── Seven-segment LED renderer ──────────────────────────────────────────────────
+// Authentic minesweeper "analogue" digits drawn with Canvas. Each glyph paints a
+// faint ghost (all segments, like the classic dim "888") under the lit segments.
+
+// Segment bits: a=top b=top-right c=bottom-right d=bottom e=bottom-left f=top-left g=mid
+private val SEVEN_SEG = mapOf(
+    '0' to 0b1111110, '1' to 0b0110000, '2' to 0b1101101, '3' to 0b1111001,
+    '4' to 0b0110011, '5' to 0b1011011, '6' to 0b1011111, '7' to 0b1110000,
+    '8' to 0b1111111, '9' to 0b1111011, '-' to 0b0000001, ' ' to 0b0000000,
+)
+
+@Composable
+private fun SevenSegment(text: String, color: Color) {
+    val d       = LocalDensity.current
+    val dw      = with(d) { 16.dp.toPx() }   // digit cell width
+    val dh      = with(d) { 28.dp.toPx() }   // digit cell height
+    val th      = with(d) { 3.5.dp.toPx() }  // segment thickness
+    val gap     = with(d) { 5.dp.toPx() }    // gap between glyphs
+    val colonW  = with(d) { 7.dp.toPx() }    // colon glyph width
+
+    var totalW = 0f
+    text.forEachIndexed { i, c ->
+        totalW += if (c == ':') colonW else dw
+        if (i < text.lastIndex) totalW += gap
+    }
+
+    Canvas(modifier = Modifier.size(with(d) { totalW.toDp() }, with(d) { dh.toDp() })) {
+        val ghost = color.copy(alpha = 0.12f)
+        var x = 0f
+        text.forEach { c ->
+            if (c == ':') {
+                drawColon(x, colonW, dh, th, ghost)
+                drawColon(x, colonW, dh, th, color)
+                x += colonW + gap
+            } else {
+                drawDigit(x, dw, dh, th, 0b1111111, ghost)
+                drawDigit(x, dw, dh, th, SEVEN_SEG[c] ?: 0, color)
+                x += dw + gap
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawDigit(x: Float, w: Float, h: Float, th: Float, mask: Int, c: Color) {
+    val g    = th * 0.55f          // inter-segment gap
+    val midY = h / 2f
+    val r    = CornerRadius(th / 2f, th / 2f)
+    fun hseg(cy: Float) =
+        drawRoundRect(c, Offset(x + th * 0.6f, cy - th / 2f), Size(w - th * 1.2f, th), r)
+    fun vseg(top: Float, bottom: Float, cx: Float) =
+        drawRoundRect(c, Offset(cx - th / 2f, top), Size(th, bottom - top), r)
+
+    if (mask and 0b1000000 != 0) hseg(th / 2f)                          // a
+    if (mask and 0b0000001 != 0) hseg(midY)                            // g
+    if (mask and 0b0001000 != 0) hseg(h - th / 2f)                     // d
+    if (mask and 0b0000010 != 0) vseg(th + g, midY - g, x + th / 2f)         // f
+    if (mask and 0b0100000 != 0) vseg(th + g, midY - g, x + w - th / 2f)     // b
+    if (mask and 0b0000100 != 0) vseg(midY + g, h - th - g, x + th / 2f)     // e
+    if (mask and 0b0010000 != 0) vseg(midY + g, h - th - g, x + w - th / 2f) // c
+}
+
+private fun DrawScope.drawColon(x: Float, w: Float, h: Float, th: Float, c: Color) {
+    val cx = x + w / 2f
+    val r  = th / 2f * 1.1f
+    drawCircle(c, r, Offset(cx, h * 0.34f))
+    drawCircle(c, r, Offset(cx, h * 0.66f))
 }
 
 // ── Difficulty bar ────────────────────────────────────────────────────────────
