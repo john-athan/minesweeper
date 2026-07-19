@@ -11,6 +11,17 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # These AndroidX versions are built against compileSdk 37 (an unreleased
+      # preview platform requiring alpha AGP), which would break stable/F-Droid
+      # builds. Hold until the project deliberately moves to a newer compileSdk.
+      - dependency-name: "androidx.core:core-ktx"
+        versions: [">=1.17.0"]
+      - dependency-name: "androidx.activity:activity-compose"
+        versions: [">=1.11.0"]
+      # compose-bom 2025.08+ pulls in Compose 1.9 / preview-SDK requirements.
+      - dependency-name: "androidx.compose:compose-bom"
+        versions: [">=2025.08.00"]
 
   # GitHub Actions used by the workflows in this repo
   - package-ecosystem: "github-actions"
