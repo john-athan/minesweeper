@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace  = "com.minesweeper"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId  = "io.github.johnathan.minesweeper"
@@ -41,8 +41,8 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.activity:activity-compose:1.10.1")
-    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.core:core-ktx:1.19.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 
