@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Unit tests + lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Project pins jvmToolchain(21) and sourceCompatibility 21; AGP 9.0.1 runs
+      # on JDK 17+. JDK 21 satisfies both the Gradle runtime and the Kotlin/Java
+      # toolchain, so no toolchain auto-provisioning is needed.
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Provides the Android SDK (ANDROID_HOME) and accepts licenses so AGP can
+      # resolve compileSdk 35 platform + build-tools. Required: setup-gradle does
+      # not supply the Android SDK.
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run unit tests and lint
+        run: ./gradlew testDebugUnitTest lintDebug --stacktrace
