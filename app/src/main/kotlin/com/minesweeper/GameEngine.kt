@@ -203,6 +203,12 @@ class GameEngine(private val scope: CoroutineScope) {
 
     private fun explodeMine(row: Int, col: Int) {
         updateCell(row, col) { it.copy(isRevealed = true, isExploded = true) }
+        // Lose immediately — the mine cascade below is presentation only. Keeping
+        // status PLAYING for the length of the animation let the player keep
+        // tapping (and even win) mid-explosion (issue #6).
+        status = GameStatus.LOST
+        timerJob?.cancel()
+        fogJob?.cancel()
         val gen = generation
         scope.launch {
             delay(250)
@@ -214,11 +220,6 @@ class GameEngine(private val scope: CoroutineScope) {
                 if (generation != gen) return@launch
                 updateCell(mc.row, mc.col) { it.copy(isRevealed = true) }
             }
-            if (generation == gen) {
-                status = GameStatus.LOST
-                timerJob?.cancel()
-                fogJob?.cancel()
-            }
         }
     }
 
@@ -228,6 +229,9 @@ class GameEngine(private val scope: CoroutineScope) {
 
         while (wave.isNotEmpty()) {
             if (generation != gen) return
+            // A wave already in flight when the game ended must not keep
+            // revealing cells (or trip checkWin) after the fact (issue #6).
+            if (status != GameStatus.PLAYING) return
 
             val toReveal  = mutableSetOf<Pair<Int, Int>>()
             val nextWave  = mutableListOf<Pair<Int, Int>>()
@@ -262,6 +266,7 @@ class GameEngine(private val scope: CoroutineScope) {
     }
 
     private fun checkWin(): Boolean {
+        if (status != GameStatus.PLAYING) return false
         val safe = difficulty.rows * difficulty.cols - difficulty.mines
         if (cells.count { it.isRevealed && !it.isMine } == safe) {
             status = GameStatus.WON
