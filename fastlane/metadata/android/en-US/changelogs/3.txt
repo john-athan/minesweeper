@@ -1,0 +1,2 @@
+1.2
+- Mine counter and timer now render as true seven-segment LED digits, ghost "888" and all.

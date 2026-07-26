@@ -1,0 +1,4 @@
+1.3
+- Fixed: tiles stayed tappable during the loss animation, so you could keep clearing the board and even win a game you had already lost.
+- The "Game Over" banner and shake now fire the instant you hit a mine.
+- Updated build tooling and dependencies.
