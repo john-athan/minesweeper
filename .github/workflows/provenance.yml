@@ -40,4 +40,4 @@ jobs:
           GH_TOKEN: ${{ secrets.PROVENANCE_TOKEN || github.token }}
         run: |
           python3 scripts/provenance-check.py \
-            ${{ inputs.since && format('--since {0}', inputs.since) || '' }}
+            ${{ github.event.inputs.since && format('--since {0}', github.event.inputs.since) || '' }}
