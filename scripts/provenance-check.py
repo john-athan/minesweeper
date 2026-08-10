@@ -4,8 +4,13 @@
 The worry this answers is narrow and real: an assistant reproduces a chunk of
 somebody's source from memory, it lands here, and the first time anyone notices
 is a letter. So before a release we take the most distinctive lines that are new
-since the last tag, ask GitHub code search whether those exact lines exist
-elsewhere, and look at the license of whatever comes back.
+since the last tag, ask GitHub code search which other repositories contain the
+same unusual identifiers together, and look at the license of what comes back.
+
+Identifiers rather than whole lines, because the code search API is token based
+and has no phrase matching: a quoted line returns nothing even when the file it
+would match is in the index. Two rare names co-occurring is a question it can
+answer, and rare enough that an answer means something.
 
 A hit under a copyleft license in a permissive repo is the case that actually
 costs money, so that is the only thing that fails the build. Everything else is
@@ -171,6 +176,12 @@ NOT_PRODUCT = re.compile(
 # Punctuation that code has and prose does not.
 CODEY = re.compile(r"[(){}\[\];=<>+\-*/%&|^!~]")
 
+# An identifier applied to a literal. These make the sharpest queries, so a line
+# carrying one earns a shorter length floor and a scoring bonus: `out.push(
+# sextet(18))` is twenty characters and worth more than any sixty-character line
+# of framework calls around it.
+CALLFORM = re.compile(r"[A-Za-z_]\w{3,}[\(\[](?:0x[0-9a-fA-F]+|\d+)[\)\]]")
+
 
 def candidate_lines(base: str | None, limit: int) -> list[tuple[str, str]]:
     """The most distinctive (path, line) pairs worth asking GitHub about."""
@@ -212,7 +223,8 @@ def candidate_lines(base: str | None, limit: int) -> list[tuple[str, str]]:
         # An import list is a fact about the ecosystem, not about this repo.
         if s.startswith(("use ", "import ", "from ", "require(", "#include", "@import")):
             continue
-        if not (45 <= len(s) <= 130):
+        has_call = bool(CALLFORM.search(s))
+        if not ((15 if has_call else 45) <= len(s) <= 130):
             continue
         if s.startswith(COMMENT_START) or BOILERPLATE.match(s):
             continue
@@ -240,7 +252,10 @@ def candidate_lines(base: str | None, limit: int) -> list[tuple[str, str]]:
         ours = sum(1 for t in toks if t in symbols)
         generic = len({t for t in toks if t not in symbols})
         algo = len(ALGORITHMIC.findall(s))
-        score = 5 * algo + 2 * generic - 6 * ours
+        # The call form is the only probe with real precision, so it outranks
+        # everything. Generic tokens are capped, or a long line of framework
+        # calls beats a short line of arithmetic purely on word count.
+        score = 5 * algo + 2 * min(generic, 6) - 6 * ours + (20 if has_call else 0)
         if score <= 0:
             continue
         scored.append((score, path, s))
@@ -249,23 +264,106 @@ def candidate_lines(base: str | None, limit: int) -> list[tuple[str, str]]:
     return [(p, s) for _, p, s in scored[:limit]]
 
 
-def search(phrase: str) -> list[dict]:
+# Tokens that appear in every project in the language and carry no signal.
+STOPWORDS = {
+    "string", "vec", "self", "value", "result", "option", "error", "none",
+    "true", "false", "null", "async", "await", "print", "println", "format",
+    "index", "count", "length", "size", "name", "path", "file", "data",
+    "buffer", "reader", "writer", "iter", "next", "clone", "unwrap", "expect",
+    "map", "filter", "collect", "push", "insert", "remove", "update", "delete",
+    "start", "stop", "state", "config", "context", "handler", "request",
+    "response", "client", "server", "message", "params", "args", "kwargs",
+    "usize", "isize", "u8", "u16", "u32", "u64", "i32", "i64", "f32", "f64",
+    "bool", "char", "byte", "bytes", "int", "float", "str", "list", "dict",
+    "set", "type", "class", "object", "static", "const", "public", "private",
+    "return", "yield", "raise", "throw", "catch", "finally", "import", "export",
+}
+
+LANGUAGE = {
+    ".rs": "rust", ".py": "python", ".ts": "typescript", ".tsx": "typescript",
+    ".js": "javascript", ".jsx": "javascript", ".swift": "swift",
+    ".kt": "kotlin", ".java": "java", ".go": "go", ".rb": "ruby",
+    ".c": "c", ".h": "c", ".cc": "cpp", ".cpp": "cpp", ".hpp": "cpp",
+    ".css": "css", ".scss": "scss", ".sh": "shell",
+}
+
+
+def probe_terms(line: str) -> list[str]:
+    """The two or three least ordinary identifiers on a line.
+
+    GitHub's code search API is token based. It has no phrase matching: a
+    quoted line comes back empty even when the file it was copied from is
+    sitting in the index, which is how the first version of this script managed
+    to report clean on a line that does exist elsewhere. So the probe is a
+    co-occurrence instead. Two unusual identifiers on one line, ANDed, is rare
+    enough to mean something and is a query the API actually answers.
+
+    Names this repo declares are deliberately not excluded. A name we invented
+    turning up in a stranger's file is the strongest signal available, and
+    dropping those is what made the base64 case invisible to an earlier version
+    of this script. Longer names first: length is the cheapest proxy for rarity.
+    """
+    # `sextet(18)` returns exactly one repository on the whole of GitHub, where
+    # `sextet ALPHABET` returns every base64 implementation ever written.
+    calls = CALLFORM.findall(line)
+    if calls:
+        return [max(calls, key=len)]
+
+    seen, terms = set(), []
+    for t in re.findall(r"[A-Za-z_][A-Za-z0-9_]{4,}", line):
+        low = t.lower()
+        if low in STOPWORDS or low in seen:
+            continue
+        seen.add(low)
+        terms.append(t)
+    terms.sort(key=len, reverse=True)
+    return terms[:3]
+
+
+def search(terms: list[str], lang: str | None) -> list[dict]:
+    """Ask code search for files where all of `terms` occur."""
+    q = " ".join(terms)
+    if lang:
+        q += f" language:{lang}"
     r = subprocess.run(
-        ["gh", "search", "code", f'"{phrase}"', "--limit", "10",
-         "--json", "repository,path"],
+        ["gh", "api", "-X", "GET", "search/code", "-f", f"q={q}",
+         "--jq", "{total: .total_count, items: [.items[]? | "
+                 "{repo: .repository.full_name, path: .path}]}"],
         capture_output=True, text=True,
     )
     if r.returncode != 0:
-        err = r.stderr.strip()
-        if "rate limit" in err.lower():
-            print("  ! GitHub code search rate limit reached, pausing 60s", file=sys.stderr)
+        if "rate limit" in r.stderr.lower():
+            print("  ! code search rate limit reached, pausing 60s", file=sys.stderr)
             time.sleep(60)
-            return search(phrase)
+            return search(terms, lang)
         return []
     try:
-        return json.loads(r.stdout or "[]")
+        payload = json.loads(r.stdout or "{}")
     except json.JSONDecodeError:
         return []
+    # A combination that matches half of GitHub was never distinctive. Reporting
+    # it would bury the one result that matters under fifty that do not. Say so
+    # out loud: a probe that was skipped is not a probe that came back clean.
+    total = payload.get("total", 0)
+    if total > 40:
+        print(f"        (too common to be evidence: {total} repositories)")
+        return []
+    return payload.get("items", [])
+
+
+def recorded() -> str:
+    """THIRD_PARTY.md, if there is one.
+
+    A finding that has been investigated and written up should not block every
+    release afterwards. Naming the repository in THIRD_PARTY.md is what closes
+    it, which puts the escape hatch in the file a reader would consult anyway
+    rather than in a dotfile nobody opens.
+    """
+    for name in ("THIRD_PARTY.md", "THIRD_PARTY_NOTICES.md", "NOTICE.md"):
+        p = Path(name)
+        if p.exists():
+            return p.read_text(errors="replace")
+    return ""
 
 
 _license_cache: dict[str, str] = {}
@@ -289,7 +387,42 @@ def main() -> int:
 
     base = baseline(args.since, args.all)
     ours, owner = own_license(), repo_owner()
-    probes = candidate_lines(base, args.limit)
+    symbols = project_symbols()
+
+    # Several lines often reduce to the same pair of unusual identifiers. Asking
+    # the same question twice costs a query out of ten per minute.
+    # Rank probes by how much an answer would mean, not by how the line scored.
+    # A call form built on a name we invented is the sharpest question available:
+    # `sextet(18)` matches one repository on GitHub, `unwrap_or(0)` matches nine
+    # hundred thousand. Both are call forms; only one is evidence.
+    def tier(terms: list[str]) -> int:
+        head = re.match(r"[A-Za-z_]\w*", terms[0]).group(0)
+        call = bool(CALLFORM.fullmatch(terms[0]))
+        ours = any(re.match(r"[A-Za-z_]\w*", x).group(0) in symbols for x in terms)
+        if call and head in symbols:
+            return 0
+        if not call and ours:
+            return 1
+        return 2 if call else 3
+
+    scored_probes, asked = [], set()
+    for path, line in candidate_lines(base, args.limit * 8):
+        terms = probe_terms(line)
+        # A call form stands alone: `sextet(18)` is already specific enough to
+        # be worth a query, and demanding a second term is what silently threw
+        # away every sharp probe in an earlier version.
+        if not terms or (len(terms) < 2 and not CALLFORM.fullmatch(terms[0])):
+            continue
+        terms = terms[:1] if CALLFORM.fullmatch(terms[0]) else terms[:2]
+        key = frozenset(x.lower() for x in terms)
+        if key in asked:
+            continue
+        asked.add(key)
+        scored_probes.append((tier(terms), path, line, terms,
+                              LANGUAGE.get(Path(path).suffix)))
+
+    scored_probes.sort(key=lambda x: x[0])
+    probes = [(p, l, tm, lg) for _, p, l, tm, lg in scored_probes[:args.limit]]
 
     scope = "all tracked source" if base is None else f"changes since {base}"
     print(f"provenance-check: {scope}, license {ours}, {len(probes)} probes\n")
@@ -297,28 +430,39 @@ def main() -> int:
         print("nothing distinctive enough to probe. clean.")
         return 0
 
+    known = recorded()
     findings = []
-    for i, (path, line) in enumerate(probes, 1):
-        print(f"[{i}/{len(probes)}] {path}: {line[:70]}")
-        for hit in search(line):
-            repo = hit["repository"]["nameWithOwner"]
+    for i, (path, line, terms, lang) in enumerate(probes, 1):
+        print(f"[{i}/{len(probes)}] {path}: {' + '.join(terms)}")
+        for hit in search(terms, lang):
+            repo = hit["repo"]
             if repo.split("/")[0].lower() == owner:
                 continue
             lic = license_of(repo)
-            findings.append((repo, hit["path"], lic, path, line))
-            flag = "COPYLEFT" if lic in COPYLEFT else "note"
+            seen_before = repo in known
+            findings.append((repo, hit["path"], lic, path, line, seen_before))
+            if seen_before:
+                flag = "recorded"
+            elif lic in COPYLEFT:
+                flag = "COPYLEFT"
+            else:
+                flag = "note"
             print(f"        -> {flag}: {repo}/{hit['path']} [{lic}]")
-        time.sleep(6)  # code search allows 10 requests per minute
+        time.sleep(7)  # code search allows 10 requests per minute
 
     print()
-    blocking = [f for f in findings if f[2] in COPYLEFT and ours not in COPYLEFT]
+    blocking = [f for f in findings
+                if f[2] in COPYLEFT and ours not in COPYLEFT and not f[5]]
     if not findings:
         print("no external matches. clean.")
         return 0
 
-    print(f"{len(findings)} external match(es), {len(blocking)} under copyleft.\n")
-    for repo, hpath, lic, our_path, line in findings:
-        print(f"  {our_path}\n    matches {repo}/{hpath} [{lic}]\n    line: {line}\n")
+    new = [f for f in findings if not f[5]]
+    print(f"{len(findings)} external match(es), {len(findings) - len(new)} already "
+          f"recorded in THIRD_PARTY.md, {len(blocking)} blocking.\n")
+    for repo, hpath, lic, our_path, line, seen_before in findings:
+        mark = "  (recorded)" if seen_before else ""
+        print(f"  {our_path}{mark}\n    matches {repo}/{hpath} [{lic}]\n    line: {line}\n")
 
     if blocking and not args.report_only:
         print("FAIL: copyleft match in a non-copyleft project. Check whether this is")
