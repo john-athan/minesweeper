@@ -1,20 +1,19 @@
 version: 2
-updates:
-  # Gradle dependencies (root module + app module resolved from "/")
-  # One PR for everything — majors included.
-  - package-ecosystem: "gradle"
-    directory: "/"
+
+# One pull request for everything: Gradle deps and GitHub Actions land together
+# in a single branch/PR via a multi-ecosystem group.
+multi-ecosystem-groups:
+  all-updates:
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 1
-    groups:
-      gradle-all:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
-          - "minor"
-          - "patch"
+
+updates:
+  # Gradle dependencies (root module + app module resolved from "/")
+  - package-ecosystem: "gradle"
+    directory: "/"
+    multi-ecosystem-group: "all-updates"
+    patterns:
+      - "*"
     ignore:
       # These AndroidX versions are built against compileSdk 37 (an unreleased
       # preview platform requiring alpha AGP), which would break stable/F-Droid
@@ -30,14 +29,6 @@ updates:
   # GitHub Actions used by the workflows in this repo
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 1
-    groups:
-      github-actions-all:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
-          - "minor"
-          - "patch"
+    multi-ecosystem-group: "all-updates"
+    patterns:
+      - "*"
