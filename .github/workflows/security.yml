@@ -19,4 +19,4 @@ jobs:
     # Google's recommended reusable workflow. The scan step is
     # continue-on-error, so an absent lockfile does not fail the job; the run
     # fails only when an actual vulnerability is found (fail-on-vuln, default).
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0
