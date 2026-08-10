@@ -160,10 +160,16 @@ def project_symbols() -> set[str]:
 ALGORITHMIC = re.compile(r"(<<|>>|0x[0-9a-fA-F]{2,}|&\s*0x|&\s*\d|\^|~\s*\w|%\s*\d)")
 
 # Our own tests and one-off asset generators are not what a letter would be about.
+# This file is excluded too: probing its own docstring burns the whole budget on
+# English sentences, which is exactly what the first CI run did.
 NOT_PRODUCT = re.compile(
     r"(^|/)(tests?|benches|examples|assets|fixtures|__tests__)/|"
-    r"(^|/)(test_[^/]+|[^/]+_test|[^/]+\.test|conftest)\.[a-z]+$"
+    r"(^|/)(test_[^/]+|[^/]+_test|[^/]+\.test|conftest)\.[a-z]+$|"
+    r"(^|/)provenance-check\.py$"
 )
+
+# Punctuation that code has and prose does not.
+CODEY = re.compile(r"[(){}\[\];=<>+\-*/%&|^!~]")
 
 
 def candidate_lines(base: str | None, limit: int) -> list[tuple[str, str]]:
@@ -196,7 +202,11 @@ def candidate_lines(base: str | None, limit: int) -> list[tuple[str, str]]:
             continue
         if NOT_PRODUCT.search(path):
             continue
-        s = line.strip()
+        # Drop a trailing comment before anything else. It is our prose, it would
+        # never match another repo, and left attached it makes a perfectly good
+        # code line read as English to the filter below. The `\s+` guard is what
+        # keeps `https://` intact.
+        s = re.sub(r"\s+(//|#)\s.*$", "", line.strip()).rstrip(",;")
         if s.startswith(("assert", "expect(", "self.assert")):
             continue
         # An import list is a fact about the ecosystem, not about this repo.
@@ -205,6 +215,11 @@ def candidate_lines(base: str | None, limit: int) -> list[tuple[str, str]]:
         if not (45 <= len(s) <= 130):
             continue
         if s.startswith(COMMENT_START) or BOILERPLATE.match(s):
+            continue
+        # A docstring body does not start with a comment marker, so it reaches
+        # here looking like source. An English sentence is many words and almost
+        # no operators; code is the other way round.
+        if len(re.findall(r"[A-Za-z']{2,}", s)) >= 7 and len(CODEY.findall(s)) < 5:
             continue
         if '"' in s or "'" in s:
             # Quoted text is either user-facing copy (ours by definition) or it
