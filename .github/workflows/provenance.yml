@@ -8,9 +8,9 @@ name: Provenance
 # is locally before tagging, where the answer can still change the release. Here
 # it catches the releases where that was forgotten.
 #
-# Code search returns markedly more with a PAT than with the default token. Set
-# the PROVENANCE_TOKEN secret (a fine-grained token, public-repo read is enough)
-# to get the full index; without it the job still runs, just blinder.
+# The default GITHUB_TOKEN reaches code search and returns the same results a
+# personal token does, verified against a known match. PROVENANCE_TOKEN is an
+# optional override for the day that stops being true.
 
 on:
   workflow_dispatch:
