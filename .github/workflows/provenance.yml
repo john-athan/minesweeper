@@ -1,0 +1,43 @@
+name: Provenance
+
+# Asks GitHub code search whether the most distinctive lines added since the last
+# release also exist in someone else's repository, and looks at the license of
+# whatever comes back. A copyleft match in a permissive project fails the job.
+#
+# This is a safety net, not the main line of defence: the useful moment to run it
+# is locally before tagging, where the answer can still change the release. Here
+# it catches the releases where that was forgotten.
+#
+# Code search returns markedly more with a PAT than with the default token. Set
+# the PROVENANCE_TOKEN secret (a fine-grained token, public-repo read is enough)
+# to get the full index; without it the job still runs, just blinder.
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "git ref to compare against (default: last tag)"
+        required: false
+        type: string
+  push:
+    tags: ["v*"]
+  schedule:
+    - cron: "0 6 1 * *"
+
+permissions:
+  contents: read
+
+jobs:
+  provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check provenance of new code
+        env:
+          GH_TOKEN: ${{ secrets.PROVENANCE_TOKEN || github.token }}
+        run: |
+          python3 scripts/provenance-check.py \
+            ${{ inputs.since && format('--since {0}', inputs.since) || '' }}
