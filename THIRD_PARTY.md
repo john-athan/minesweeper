@@ -44,6 +44,6 @@ other implementation is used here.
 
 ## Reviewed and cleared
 
-Nothing yet. Findings from `scripts/provenance-check.py` that turn out to be
+Nothing yet. Findings from `oss provenance minesweeper` that turn out to be
 convergent output rather than copying belong here, with the date and the
 reasoning.
