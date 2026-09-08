@@ -20,10 +20,9 @@ not the reverse).
 | Kotlin standard library | Apache-2.0 | Copyright (c) JetBrains s.r.o. |
 
 Apache-2.0 requires the license text and any NOTICE content to travel with the
-binary. The Android toolchain does not do this on its own, and neither does this
-app yet: the texts are here and in the repository, and nothing in the installed
-APK displays them. An in-app licenses screen is the open item, and it is also
-what F-Droid expects.
+binary. The Android toolchain does not do this on its own, so the app carries
+`res/raw/licenses.txt` and shows it behind the Licenses button at the foot of
+the game screen. It reads with no network, which is also what F-Droid expects.
 
 ## Design language
 

@@ -12,6 +12,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -27,6 +29,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.hapticfeedback.*
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.*
@@ -49,8 +52,13 @@ fun MinesweeperApp(game: GameEngine) {
     // Custom-game config (issue #5). Remembers the last-used settings so the
     // dialog reopens where you left it.
     var showCustomDialog by remember { mutableStateOf(false) }
+    var showLicenses by remember { mutableStateOf(false) }
     var lastCustom by remember {
         mutableStateOf(Difficulty.custom(size = 16, mines = 40, fog = false, safeStart = true))
+    }
+
+    if (showLicenses) {
+        LicensesDialog(onDismiss = { showLicenses = false })
     }
 
     if (showCustomDialog) {
@@ -178,9 +186,49 @@ fun MinesweeperApp(game: GameEngine) {
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = { showLicenses = true }) {
+                Text(
+                    "Licenses",
+                    fontSize = 11.sp,
+                    color    = Color.White.copy(alpha = 0.35f),
+                )
+            }
         }
     }
+}
+
+// The Apache-2.0 libraries this app is built on require their license text to
+// travel with the binary, and the Android toolchain does not do that on its
+// own. The text is a raw resource rather than a link so it is readable with no
+// network, which is also what F-Droid expects.
+
+@Composable
+private fun LicensesDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val text = remember {
+        context.resources.openRawResource(R.raw.licenses)
+            .bufferedReader()
+            .use { it.readText() }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = { Text("Licenses") },
+        text = {
+            Text(
+                text       = text,
+                fontSize   = 10.sp,
+                lineHeight = 14.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier   = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
+            )
+        },
+    )
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────
