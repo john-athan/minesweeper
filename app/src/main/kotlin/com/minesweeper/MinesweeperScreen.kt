@@ -132,7 +132,7 @@ fun MinesweeperApp(game: GameEngine) {
 
             Spacer(Modifier.height(4.dp))
 
-            // Grid — expands to fill whatever remains
+            // Grid, expands to fill whatever remains
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -390,7 +390,7 @@ private fun DifficultyBar(
                 onTap    = { onSelect(diff) },
             )
         }
-        // Custom tab (issue #5) — opens the config dialog. Highlighted whenever
+        // Custom tab (issue #5), opens the config dialog. Highlighted whenever
         // a user-defined game is active.
         DifficultyTab(
             label    = "Custom",
@@ -452,9 +452,12 @@ private fun CustomConfigDialog(
     var fog       by remember { mutableStateOf(initial.fogSeconds != null) }
     var safeStart by remember { mutableStateOf(initial.safeRadius >= 0) }
 
-    val maxMines = (size * size - 1).coerceAtLeast(1)
-    // Shrinking the grid can push the mine count past the new maximum; pull it back.
-    LaunchedEffect(size) { if (mines > maxMines) mines = maxMines }
+    // The same ceiling the engine enforces, so the slider cannot offer a count
+    // that gets silently clamped away on Start.
+    val maxMines = Difficulty.maxMines(size, size, if (safeStart) 1 else -1)
+    // Shrinking the grid, or turning the safe tap on, can push the mine count
+    // past the new maximum; pull it back.
+    LaunchedEffect(size, safeStart) { if (mines > maxMines) mines = maxMines }
     val safeMines = mines.coerceIn(1, maxMines)
 
     AlertDialog(
@@ -683,7 +686,7 @@ private fun CellView(
 
                 // ── Unrevealed (flagged or not) ───────────────────────────────
                 // Flagged cells keep the normal cell background so only the flag
-                // icon stands out — no odd tint behind the marker (issue #1).
+                // icon stands out, no odd tint behind the marker (issue #1).
                 !cell.isRevealed -> {
                     drawCellShadow(w, h, cr)
                     drawRoundRect(

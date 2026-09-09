@@ -7,7 +7,7 @@
 #   https://gitlab.com/fdroid/fdroiddata/-/merge_requests/36056
 #
 # Because AutoUpdateMode is Version, the F-Droid bot appends a build entry and
-# bumps CurrentVersion on its own every time a new tag lands — so this snapshot
+# bumps CurrentVersion on its own every time a new tag lands, so this snapshot
 # goes stale after each release. Refresh it with:
 #
 #   curl -sS -o fdroid-submission/io.github.johnathan.minesweeper.yml \

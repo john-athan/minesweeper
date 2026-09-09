@@ -20,7 +20,25 @@ data class Difficulty(
     /** true for user-defined games built via [custom] */
     val isCustom: Boolean = false,
 ) {
+    /** Most mines this grid can hold, given its first-tap safe area. */
+    val maxMines: Int get() = maxMines(rows, cols, safeRadius)
+
     companion object {
+        /**
+         * The mine ceiling for a grid. Mines are drawn from the cells outside the
+         * first-tap safe area, so a count above this cannot be placed: the board
+         * silently ends up with fewer mines than asked for, and anything that
+         * trusts the requested number instead of the board disagrees with it.
+         *
+         * The safe area is at its largest for a tap far enough from every edge
+         * that none of it is clipped, so that is the case this has to survive.
+         */
+        fun maxMines(rows: Int, cols: Int, safeRadius: Int): Int {
+            val span = 2 * safeRadius + 1
+            val safe = if (safeRadius < 0) 0 else minOf(span, rows) * minOf(span, cols)
+            return (rows * cols - safe).coerceAtLeast(1)
+        }
+
         val EASY = Difficulty(
             9, 9, 10, "Easy",
             safeRadius = 1, chordEnabled = true, countdownSeconds = null, fogSeconds = null)
@@ -35,26 +53,30 @@ data class Difficulty(
         val presets = listOf(EASY, MEDIUM, HARD)
 
         /**
-         * Build a user-defined game (issue #5). Grid is [size]×[size];
-         * mines clamped to leave at least one safe cell. Chord stays on and
-         * there's no countdown — custom is about layout, not time pressure.
+         * Build a user-defined game (issue #5). Grid is [size]×[size]; mines
+         * clamped to what the grid can hold once the safe area is carved out.
+         * Chord stays on and there is no countdown: custom is about layout,
+         * not time pressure.
          */
         fun custom(
             size: Int,
             mines: Int,
             fog: Boolean,
             safeStart: Boolean,
-        ) = Difficulty(
-            rows             = size,
-            cols             = size,
-            mines            = mines.coerceIn(1, size * size - 1),
-            label            = "Custom",
-            safeRadius       = if (safeStart) 1 else -1,
-            chordEnabled     = true,
-            countdownSeconds = null,
-            fogSeconds       = if (fog) 6 else null,
-            isCustom         = true,
-        )
+        ): Difficulty {
+            val safeRadius = if (safeStart) 1 else -1
+            return Difficulty(
+                rows             = size,
+                cols             = size,
+                mines            = mines.coerceIn(1, maxMines(size, size, safeRadius)),
+                label            = "Custom",
+                safeRadius       = safeRadius,
+                chordEnabled     = true,
+                countdownSeconds = null,
+                fogSeconds       = if (fog) 6 else null,
+                isCustom         = true,
+            )
+        }
     }
 }
 
@@ -203,7 +225,7 @@ class GameEngine(private val scope: CoroutineScope) {
 
     private fun explodeMine(row: Int, col: Int) {
         updateCell(row, col) { it.copy(isRevealed = true, isExploded = true) }
-        // Lose immediately — the mine cascade below is presentation only. Keeping
+        // Lose immediately, the mine cascade below is presentation only. Keeping
         // status PLAYING for the length of the animation let the player keep
         // tapping (and even win) mid-explosion (issue #6).
         status = GameStatus.LOST
@@ -267,7 +289,10 @@ class GameEngine(private val scope: CoroutineScope) {
 
     private fun checkWin(): Boolean {
         if (status != GameStatus.PLAYING) return false
-        val safe = difficulty.rows * difficulty.cols - difficulty.mines
+        // Counted off the board, not off difficulty.mines. The two agree now that
+        // custom() clamps to what fits, but the board is the one that decides
+        // whether a cell holds a mine, so it is the one the win condition reads.
+        val safe = cells.count { !it.isMine }
         if (cells.count { it.isRevealed && !it.isMine } == safe) {
             status = GameStatus.WON
             timerJob?.cancel()
@@ -287,7 +312,7 @@ class GameEngine(private val scope: CoroutineScope) {
                 elapsedSeconds++
                 val cd = difficulty.countdownSeconds
                 if (cd != null && elapsedSeconds >= cd) {
-                    // Time's up — reveal all mines and lose
+                    // Time's up, reveal all mines and lose
                     cells = cells.map { if (it.isMine) it.copy(isRevealed = true) else it }
                     status = GameStatus.LOST
                     fogJob?.cancel()
