@@ -6,6 +6,9 @@ multi-ecosystem-groups:
   all-updates:
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
 
 updates:
   # Gradle dependencies (root module + app module resolved from "/")
