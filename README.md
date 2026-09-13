@@ -60,7 +60,7 @@ Release build (unsigned):
 
 | Layer | Technology |
 |---|---|
-| Language | Kotlin 2.4.10 |
+| Language | Kotlin 2.4.20 |
 | UI | Jetpack Compose (BOM 2025.07.00) |
 | Design system | Material 3 |
 | Dynamic colour | Material You (Android 12+) |
