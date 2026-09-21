@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Project pins jvmToolchain(21) and sourceCompatibility 21; AGP 9.0.1 runs
+      # Project pins jvmToolchain(21) and sourceCompatibility 21; AGP 9.4.1 runs
       # on JDK 17+. JDK 21 satisfies both the Gradle runtime and the Kotlin/Java
       # toolchain, so no toolchain auto-provisioning is needed.
       - name: Set up JDK 21

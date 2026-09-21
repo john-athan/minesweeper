@@ -64,7 +64,7 @@ Release build (unsigned):
 | UI | Jetpack Compose (BOM 2025.07.00) |
 | Design system | Material 3 |
 | Dynamic colour | Material You (Android 12+) |
-| Build | AGP 9.4.0, Gradle 9.7.1 |
+| Build | AGP 9.4.1, Gradle 9.7.1 |
 | Min SDK | 21 (Android 5.0) |
 
 All dependencies are Apache 2.0 licensed (AndroidX / Jetpack). No third-party libraries, no trackers, no network calls of any kind.
