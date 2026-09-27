@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.zIndex
 import com.minesweeper.ui.theme.*
 import kotlin.math.roundToInt
 
@@ -144,10 +145,13 @@ fun MinesweeperApp(game: GameEngine) {
                 val rows = game.difficulty.rows
                 val gap  = 1.dp
 
-                // Fill screen: compute largest cell that fits in both axes
+                // Fill screen: compute largest cell that fits in both axes,
+                // leaving a margin for the exploding tile's pulse. The grid
+                // clips to its bounds, so without it a mine on the edge row or
+                // column has its flashing border cut flat (issue #26).
                 val cellSize = remember(cols, rows, maxWidth, maxHeight) {
-                    val cw = (maxWidth  - gap * (cols - 1)) / cols
-                    val ch = (maxHeight - gap * (rows - 1)) / rows
+                    val cw = (maxWidth  - gap * (cols - 1)) / (cols + 2 * PULSE_OVERSHOOT)
+                    val ch = (maxHeight - gap * (rows - 1)) / (rows + 2 * PULSE_OVERSHOOT)
                     minOf(cw, ch).coerceAtLeast(8.dp)
                 }
 
@@ -156,7 +160,7 @@ fun MinesweeperApp(game: GameEngine) {
                     modifier              = Modifier.wrapContentSize(),
                     horizontalArrangement = Arrangement.spacedBy(gap),
                     verticalArrangement   = Arrangement.spacedBy(gap),
-                    contentPadding        = PaddingValues(0.dp),
+                    contentPadding        = PaddingValues(cellSize * PULSE_OVERSHOOT),
                     userScrollEnabled     = false,
                 ) {
                     items(
@@ -589,6 +593,11 @@ private fun StatusBanner(status: GameStatus) {
 
 // ── Cell view ─────────────────────────────────────────────────────────────────
 
+/** How far the exploding tile grows at the top of its pulse. */
+private const val PULSE_PEAK = 1.18f
+/** The part of a cell the pulse reaches past each edge of its slot. */
+private const val PULSE_OVERSHOOT = (PULSE_PEAK - 1f) / 2f
+
 @Composable
 private fun CellView(
     cell:        Cell,
@@ -632,7 +641,7 @@ private fun CellView(
     val explodeInf = rememberInfiniteTransition(label = "expl")
     val explodePulse by explodeInf.animateFloat(
         initialValue  = 1f,
-        targetValue   = if (cell.isExploded) 1.18f else 1f,
+        targetValue   = if (cell.isExploded) PULSE_PEAK else 1f,
         animationSpec = infiniteRepeatable(tween(280), RepeatMode.Reverse),
         label         = "explPulse",
     )
@@ -648,6 +657,10 @@ private fun CellView(
     Box(
         modifier = Modifier
             .size(cellSize)
+            // The pulse grows the tile past its slot, and the grid paints later
+            // tiles over earlier ones, so without this the right and bottom
+            // neighbours cut the flashing border off (issue #26).
+            .zIndex(if (cell.isExploded) 1f else 0f)
             .scale(totalScale)
             .pointerInput(Unit) {
                 detectTapGestures(
