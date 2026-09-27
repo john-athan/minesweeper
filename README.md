@@ -26,6 +26,8 @@ Past the three presets there is a **Custom** mode: pick a grid anywhere from 5×
 
 The grid always fills the screen. Cells scale to any device. No zooming, no tiny tap targets.
 
+Best time and win count are tracked per preset (Easy, Medium, Hard) and shown in the win/lose banner, stored locally with plain Android SharedPreferences.
+
 ---
 
 ## Screenshots

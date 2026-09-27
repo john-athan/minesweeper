@@ -113,6 +113,13 @@ class GameEngine(private val scope: CoroutineScope) {
     var cells          by mutableStateOf(buildGrid(Difficulty.EASY))
         private set
 
+    /**
+     * Fires exactly once per finished game, right where status flips to WON
+     * or LOST, so the caller doesn't have to guess from recomposition whether
+     * a game already got recorded (stats, issue: stats).
+     */
+    var onGameOver: (() -> Unit)? = null
+
     /** Per-cell fog expiry timestamps, parallel to cells list. Not exposed to UI. */
     private var fogExpiry = LongArray(Difficulty.EASY.rows * Difficulty.EASY.cols) { Long.MAX_VALUE }
 
@@ -233,6 +240,7 @@ class GameEngine(private val scope: CoroutineScope) {
         status = GameStatus.LOST
         timerJob?.cancel()
         fogJob?.cancel()
+        onGameOver?.invoke()
         val gen = generation
         scope.launch {
             delay(250)
@@ -301,6 +309,7 @@ class GameEngine(private val scope: CoroutineScope) {
             fogJob?.cancel()
             minesLeft = 0
             cells = cells.map { if (it.isMine) it.copy(isFlagged = true) else it }
+            onGameOver?.invoke()
             return true
         }
         return false
@@ -318,6 +327,7 @@ class GameEngine(private val scope: CoroutineScope) {
                     cells = cells.map { if (it.isMine) it.copy(isRevealed = true) else it }
                     status = GameStatus.LOST
                     fogJob?.cancel()
+                    onGameOver?.invoke()
                     break
                 }
             }

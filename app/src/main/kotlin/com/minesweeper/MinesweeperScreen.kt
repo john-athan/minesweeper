@@ -58,6 +58,32 @@ fun MinesweeperApp(game: GameEngine) {
         mutableStateOf(Difficulty.custom(size = 16, mines = 40, fog = false, safeStart = true))
     }
 
+    // Stats live in the app's one prefs file (issue: stats). Plain
+    // SharedPreferences, no new dependency.
+    val context = LocalContext.current
+    val prefs   = remember { appPrefs(context) }
+    val stats   = remember { StatsRecorder(SharedPrefsStatsStore(prefs)) }
+
+    // The extra banner line (issue: stats). Set once per finished game, from
+    // the engine's own state transition rather than a recomposition, so a
+    // recompose or the loss animation can't record the same game twice.
+    var statsLine by remember { mutableStateOf<String?>(null) }
+    game.onGameOver = {
+        val diff = game.difficulty
+        statsLine = if (diff.isCustom) {
+            null // boards vary board to board, so custom isn't tracked
+        } else {
+            val r = stats.record(diff.label, game.status == GameStatus.WON, game.elapsedSeconds)
+            val wonLine = "Won ${r.won} of ${r.finished}"
+            if (game.status == GameStatus.WON) {
+                val bestPart = if (r.isNewBest) "New best" else "Best ${formatMMSS(r.bestSeconds!!)}"
+                "${formatMMSS(game.elapsedSeconds)} · $bestPart · $wonLine"
+            } else {
+                wonLine
+            }
+        }
+    }
+
     if (showLicenses) {
         LicensesDialog(onDismiss = { showLicenses = false })
     }
@@ -121,14 +147,15 @@ fun MinesweeperApp(game: GameEngine) {
             Spacer(Modifier.height(4.dp))
 
             // Fixed-height reserved slot for the status banner so the grid
-            // doesn't resize when the banner appears/disappears
+            // doesn't resize when the banner appears/disappears. Tall enough
+            // for the stats line under the banner text (issue: stats).
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(44.dp),
+                    .height(60.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                StatusBanner(game.status)
+                StatusBanner(game.status, statsLine)
             }
 
             Spacer(Modifier.height(4.dp))
@@ -556,7 +583,7 @@ private fun sliderColors() = SliderDefaults.colors(
 // ── Status banner ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun StatusBanner(status: GameStatus) {
+private fun StatusBanner(status: GameStatus, statsLine: String?) {
     val visible = status == GameStatus.WON || status == GameStatus.LOST
     val bg      = if (status == GameStatus.WON) Color(0xFF0E3A20) else Color(0xFF3D0808)
     val text    = if (status == GameStatus.WON) "🎉  You Win!  🎉" else "💥  Game Over  💥"
@@ -581,16 +608,29 @@ private fun StatusBanner(status: GameStatus) {
                 .background(bg),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text       = text,
-                style      = MaterialTheme.typography.titleMedium,
-                color      = SoftWhite.copy(alpha = pulse),
-                fontWeight = FontWeight.Bold,
-                modifier   = Modifier.padding(vertical = 8.dp),
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text       = text,
+                    style      = MaterialTheme.typography.titleMedium,
+                    color      = SoftWhite.copy(alpha = pulse),
+                    fontWeight = FontWeight.Bold,
+                    modifier   = Modifier.padding(top = 8.dp, bottom = if (statsLine != null) 0.dp else 8.dp),
+                )
+                if (statsLine != null) {
+                    Text(
+                        text     = statsLine,
+                        style    = MaterialTheme.typography.bodySmall,
+                        color    = SoftWhite.copy(alpha = pulse),
+                        modifier = Modifier.padding(bottom = 6.dp),
+                    )
+                }
+            }
         }
     }
 }
+
+/** mm:ss for a plain second count, best time or elapsed play time alike. */
+private fun formatMMSS(seconds: Int) = "%02d:%02d".format(seconds / 60, seconds % 60)
 
 // ── Cell view ─────────────────────────────────────────────────────────────────
 
