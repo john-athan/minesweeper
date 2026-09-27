@@ -1,6 +1,6 @@
 # Minesweeper
 
-The only beautiful, private, mechanically interesting Minesweeper on Android.
+A Minesweeper for Android that looks like a first-party app, asks for nothing, and plays differently by difficulty.
 
 No ads. No permissions. No analytics. No internet. Just the game.
 
