@@ -94,6 +94,24 @@ class GameEngineTest {
         }
     }
 
+    @Test
+    fun `Hard's first tap is never a mine, wherever it lands`() = runTest {
+        // safeRadius 0 protects only the tapped cell (issue #27), so unlike
+        // the radius-1 test above this has to vary where that tap lands,
+        // including the corners, to catch an off-by-one in the safe set.
+        val taps = listOf(0 to 0, 0 to 13, 13 to 0, 13 to 13, 7 to 7, 3 to 11)
+        repeat(20) {
+            for ((row, col) in taps) {
+                val (g, scope) = engine()
+                g.newGame(Difficulty.HARD)
+                g.reveal(row, col)
+                assertTrue("tap at ($row,$col) landed on a mine", !g.cell(row, col).isMine)
+                assertNotEquals(GameStatus.LOST, g.status)
+                scope.cancel()
+            }
+        }
+    }
+
     // ── Winning and losing ────────────────────────────────────────────────────
 
     @Test

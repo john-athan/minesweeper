@@ -10,7 +10,7 @@ The grid always fills the screen. Cells scale to any device. No zooming, no tiny
 
 • <b>Easy</b>, 9×9, classic rules, guaranteed safe first click, full chord support
 • <b>Medium</b>, 12×12, higher mine density, 5-minute countdown, only your clicked cell is safe at the start
-• <b>Hard</b>, 14×14, no safe start, chord disabled, 3-minute countdown, and <b>fog of war</b>: revealed cells fade out after 6 seconds and you must hold the entire mine map in your head
+• <b>Hard</b>, 14×14, safe on the tapped cell only, chord disabled, 3-minute countdown, and <b>fog of war</b>: revealed cells fade out after 6 seconds and you must hold the entire mine map in your head
 
 Fog of war is a novel mechanic that does not exist in any other Minesweeper app.
 

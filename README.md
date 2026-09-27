@@ -18,7 +18,7 @@ The three built-in difficulty modes are mechanically distinct, not just bigger g
 
 - **Easy**, 9×9, classic rules, guaranteed safe first click
 - **Medium**, 12×12, higher mine density, 5-minute countdown, only your clicked cell is safe at the start
-- **Hard**, 14×14, no safe start, no chord reveal, 3-minute countdown, **fog of war**, revealed cells fade out after 6 seconds and you must hold the mine map in your head
+- **Hard**, 14×14, safe on the tapped cell only, no chord reveal, 3-minute countdown, **fog of war**, revealed cells fade out after 6 seconds and you must hold the mine map in your head
 
 Fog of war is a novel mechanic that doesn't exist in any other Minesweeper app. It turns a memory game into a memory game.
 

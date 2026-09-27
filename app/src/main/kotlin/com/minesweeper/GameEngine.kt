@@ -46,8 +46,10 @@ data class Difficulty(
             12, 12, 30, "Medium",
             safeRadius = 0, chordEnabled = true, countdownSeconds = 300, fogSeconds = null)
         val HARD = Difficulty(
+            // safeRadius 0 protects only the tapped cell (issue #27): the
+            // first tap can no longer be a mine, but nothing opens around it.
             14, 14, 50, "Hard",
-            safeRadius = -1, chordEnabled = false, countdownSeconds = 180, fogSeconds = 6)
+            safeRadius = 0, chordEnabled = false, countdownSeconds = 180, fogSeconds = 6)
 
         /** Built-in presets, shown as fixed tabs in the difficulty bar. */
         val presets = listOf(EASY, MEDIUM, HARD)

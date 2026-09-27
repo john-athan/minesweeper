@@ -387,9 +387,10 @@ private fun DifficultyBar(
                 label    = diff.label,
                 active   = selected == diff,
                 subtitle = buildList {
+                    // No preset has safeRadius < 0 any more (issue #27), so
+                    // there is no "unsafe start" marker left to show here.
                     if (diff.countdownSeconds != null) add("⏱")
                     if (diff.fogSeconds != null)       add("👁")
-                    if (diff.safeRadius < 0)           add("⚡")
                 }.ifEmpty { listOf("${diff.mines}💣") }.joinToString(""),
                 onTap    = { onSelect(diff) },
             )
