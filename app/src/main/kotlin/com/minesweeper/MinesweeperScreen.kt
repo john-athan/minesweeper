@@ -32,6 +32,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
@@ -63,6 +65,9 @@ fun MinesweeperApp(game: GameEngine) {
     val context = LocalContext.current
     val prefs   = remember { appPrefs(context) }
     val stats   = remember { StatsRecorder(SharedPrefsStatsStore(prefs)) }
+
+    // Flag mode (issue: flag mode): persisted in the same prefs file.
+    var flagMode by remember { mutableStateOf(prefs.getBoolean(KEY_FLAG_MODE, false)) }
 
     // The extra banner line (issue: stats). Set once per finished game, from
     // the engine's own state transition rather than a recomposition, so a
@@ -160,6 +165,22 @@ fun MinesweeperApp(game: GameEngine) {
 
             Spacer(Modifier.height(4.dp))
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                FlagModeToggle(
+                    active = flagMode,
+                    onToggle = {
+                        flagMode = !flagMode
+                        prefs.edit().putBoolean(KEY_FLAG_MODE, flagMode).apply()
+                    },
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+
             // Grid, expands to fill whatever remains
             BoxWithConstraints(
                 modifier = Modifier
@@ -204,13 +225,21 @@ fun MinesweeperApp(game: GameEngine) {
                                 when {
                                     cell.isFogged   -> Unit  // can't interact with fogged cells
                                     cell.isRevealed -> game.chord(cell.row, cell.col)
+                                    flagMode        -> game.toggleFlag(cell.row, cell.col)
                                     else            -> game.reveal(cell.row, cell.col)
                                 }
                             },
                             onLongPress = {
                                 if (game.status == GameStatus.WON || game.status == GameStatus.LOST) return@CellView
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                game.toggleFlag(cell.row, cell.col)
+                                // Flag mode swaps the two gestures: long press
+                                // takes over the plain tap's reveal (issue: flag mode).
+                                when {
+                                    cell.isFogged    -> Unit
+                                    !flagMode        -> game.toggleFlag(cell.row, cell.col)
+                                    !cell.isRevealed -> game.reveal(cell.row, cell.col)
+                                    else             -> Unit
+                                }
                             },
                         )
                     }
@@ -468,6 +497,29 @@ private fun RowScope.DifficultyTab(
                 fontSize = 11.sp,
             )
         }
+    }
+}
+
+// ── Flag mode toggle ─────────────────────────────────────────────────────────
+
+@Composable
+private fun FlagModeToggle(active: Boolean, onToggle: () -> Unit) {
+    val bg by animateColorAsState(
+        if (active) CyberCyan else Color(0xFF1B2B3C), tween(250), label = "flagBg"
+    )
+    val fg by animateColorAsState(
+        if (active) SpaceBlack else MutedBlue, tween(250), label = "flagFg"
+    )
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+            .semantics { contentDescription = "Flag mode" }
+            .pointerInput(Unit) { detectTapGestures(onTap = { onToggle() }) },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("⚑", fontSize = 18.sp, color = fg)
     }
 }
 

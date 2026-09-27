@@ -22,5 +22,6 @@ Fog of war is a novel mechanic that does not exist in any other Minesweeper app.
 • Haptic feedback on every interaction
 • Deep-space dark theme with vibrant number colours
 • Best time and win count per preset, shown in the win/lose banner
+• Flag mode toggle, swaps tap and long-press so a tap flags a cell
 
 <b>100% free and open source</b>, GPLv3, no ads, no tracking, no analytics.

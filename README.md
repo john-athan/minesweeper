@@ -28,6 +28,8 @@ The grid always fills the screen. Cells scale to any device. No zooming, no tiny
 
 Best time and win count are tracked per preset (Easy, Medium, Hard) and shown in the win/lose banner, stored locally with plain Android SharedPreferences.
 
+A flag mode toggle above the board swaps tap and long-press: tap flags an unrevealed cell, long-press reveals it.
+
 ---
 
 ## Screenshots
