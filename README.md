@@ -6,7 +6,7 @@ No ads. No permissions. No analytics. No internet. Just the game.
 
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.github.johnathan.minesweeper)
 
-> Live on F-Droid as of v1.2. The update bot picks up new tags on its own schedule, so v1.3 can lag the GitHub release for a while.
+> Live on F-Droid. Its update bot picks up new tags on its own schedule, so the newest GitHub release can lag there for a while.
 
 ---
 
