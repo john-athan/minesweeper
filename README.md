@@ -44,7 +44,7 @@ A flag mode toggle above the board swaps tap and long-press: tap flags an unreve
 
 ## Building
 
-Requirements: JDK 17+, Android SDK 35, Gradle (wrapper included).
+Requirements: JDK 21, Android SDK 35, Gradle (wrapper included).
 
 ```bash
 git clone https://github.com/john-athan/minesweeper
@@ -64,7 +64,7 @@ Release build (unsigned):
 
 | Layer | Technology |
 |---|---|
-| Language | Kotlin 2.4.20 |
+| Language | Kotlin 2.4.21 |
 | UI | Jetpack Compose (BOM 2025.07.00) |
 | Design system | Material 3 |
 | Dynamic colour | Material You (Android 12+) |
