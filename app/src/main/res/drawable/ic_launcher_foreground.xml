@@ -1,45 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- A lost game in nine tiles: the mine, a flag, and the numbers that warned you.
+     Drawn on the 128 unit canvas of the store icon and scaled into the 66dp
+     safe zone of the 108dp adaptive icon. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-
-    <!-- Horizontal spike -->
-    <path
-        android:pathData="M16,51 L92,51 L92,57 L16,57 Z"
-        android:fillColor="#4ECDC4"/>
-    <!-- Vertical spike -->
-    <path
-        android:pathData="M51,16 L57,16 L57,92 L51,92 Z"
-        android:fillColor="#4ECDC4"/>
-    <!-- Diagonal spikes (NW-SE and NE-SW) -->
-    <group
-        android:pivotX="54"
-        android:pivotY="54"
-        android:rotation="45">
-        <path
-            android:pathData="M16,51 L92,51 L92,57 L16,57 Z"
-            android:fillColor="#4ECDC4"/>
-        <path
-            android:pathData="M51,16 L57,16 L57,92 L51,92 Z"
-            android:fillColor="#4ECDC4"/>
+    <group android:scaleX="0.54" android:scaleY="0.54" android:translateX="19.44" android:translateY="19.44">
+        <path android:pathData="M21,15h18a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-18a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6z" android:fillColor="#1D4442"/>
+        <path android:pathData="M21.5,16.5h17a5,5 0 0 1 5,5v15a5,5 0 0 1 -5,5h-17a5,5 0 0 1 -5,-5v-15a5,5 0 0 1 5,-5z" android:fillColor="#2A5D5A"/>
+        <path android:pathData="M55,15h18a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-18a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6z" android:fillColor="#1D4442"/>
+        <path android:pathData="M55.5,16.5h17a5,5 0 0 1 5,5v15a5,5 0 0 1 -5,5h-17a5,5 0 0 1 -5,-5v-15a5,5 0 0 1 5,-5z" android:fillColor="#2A5D5A"/>
+        <path android:pathData="M89,15h18a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-18a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6z" android:fillColor="#1D4442"/>
+        <path android:pathData="M89.5,16.5h17a5,5 0 0 1 5,5v15a5,5 0 0 1 -5,5h-17a5,5 0 0 1 -5,-5v-15a5,5 0 0 1 5,-5z" android:fillColor="#2A5D5A"/>
+        <path android:pathData="M21,49h18a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-18a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6z" android:fillColor="#0C1D1E"/>
+        <path android:pathData="M27,58L31,55V73" android:strokeColor="#6FB6FF" android:strokeWidth="4" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+        <path android:pathData="M55,49h18a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-18a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6z" android:fillColor="#EF5B4C"/>
+        <path android:pathData="M89,49h18a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-18a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6z" android:fillColor="#1D4442"/>
+        <path android:pathData="M89.5,50.5h17a5,5 0 0 1 5,5v15a5,5 0 0 1 -5,5h-17a5,5 0 0 1 -5,-5v-15a5,5 0 0 1 5,-5z" android:fillColor="#2A5D5A"/>
+        <path android:pathData="M21,83h18a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-18a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6z" android:fillColor="#0C1D1E"/>
+        <path android:pathData="M27,92L31,89V107" android:strokeColor="#6FB6FF" android:strokeWidth="4" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+        <path android:pathData="M55,83h18a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-18a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6z" android:fillColor="#0C1D1E"/>
+        <path android:pathData="M58,94C58,88 70,88 70,94C70,99 58,102 58,107H70" android:strokeColor="#7DDC8C" android:strokeWidth="4" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+        <path android:pathData="M89,83h18a6,6 0 0 1 6,6v18a6,6 0 0 1 -6,6h-18a6,6 0 0 1 -6,-6v-18a6,6 0 0 1 6,-6z" android:fillColor="#1D4442"/>
+        <path android:pathData="M89.5,84.5h17a5,5 0 0 1 5,5v15a5,5 0 0 1 -5,5h-17a5,5 0 0 1 -5,-5v-15a5,5 0 0 1 5,-5z" android:fillColor="#2A5D5A"/>
+        <path android:pathData="M64,64L75.5,64.0 M64,64L72.1,72.1 M64,64L64.0,75.5 M64,64L55.9,72.1 M64,64L52.5,64.0 M64,64L55.9,55.9 M64,64L64.0,52.5 M64,64L72.1,55.9" android:strokeColor="#101B1B" android:strokeWidth="3.2" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+        <path android:pathData="M56,64a8,8 0 1 0 16,0a8,8 0 1 0 -16,0z" android:fillColor="#101B1B"/>
+        <path android:pathData="M58.6,61a2.4,2.4 0 1 0 4.8,0a2.4,2.4 0 1 0 -4.8,0z" android:fillColor="#FFFFFF" android:fillAlpha="0.8"/>
+        <path android:pathData="M95,21v17" android:strokeColor="#E8F1F0" android:strokeWidth="2.5" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+        <path android:pathData="M95,21l11,5l-11,5z" android:fillColor="#EF5B4C"/>
+        <path android:pathData="M90,39h10" android:strokeColor="#E8F1F0" android:strokeWidth="2.5" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
     </group>
-
-    <!-- Mine body -->
-    <path
-        android:pathData="M54,30 A24,24 0 1,0 54,78 A24,24 0 1,0 54,30 Z"
-        android:fillColor="#4ECDC4"/>
-
-    <!-- Fuse / wick -->
-    <path
-        android:pathData="M66,32 Q74,18 78,22"
-        android:strokeColor="#FFD700"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"/>
-
-    <!-- Shine highlight -->
-    <path
-        android:pathData="M44,38 A5,5 0 1,0 44,48 A5,5 0 1,0 44,38 Z"
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.55"/>
 </vector>
