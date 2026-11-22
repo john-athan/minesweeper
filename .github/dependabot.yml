@@ -1,37 +1,31 @@
 version: 2
 
-# One pull request for everything: Gradle deps and GitHub Actions land together
-# in a single branch/PR via a multi-ecosystem group.
-multi-ecosystem-groups:
-  all-updates:
+# One pull request per ecosystem per week, majors included. They are reviewed
+# and merged together with `oss update --merge`, which is what keeps two repos
+# built from the same template from drifting apart.
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
       day: "sunday"
       time: "06:00"
       timezone: "Europe/Berlin"
+    open-pull-requests-limit: 1
+    groups:
+      github-actions:
+        patterns: ["*"]
+        update-types: ["major", "minor", "patch"]
 
-updates:
-  # Gradle dependencies (root module + app module resolved from "/")
   - package-ecosystem: "gradle"
     directory: "/"
-    multi-ecosystem-group: "all-updates"
-    patterns:
-      - "*"
-    ignore:
-      # These AndroidX versions are built against compileSdk 37 (an unreleased
-      # preview platform requiring alpha AGP), which would break stable/F-Droid
-      # builds. Hold until the project deliberately moves to a newer compileSdk.
-      - dependency-name: "androidx.core:core-ktx"
-        versions: [">=1.17.0"]
-      - dependency-name: "androidx.activity:activity-compose"
-        versions: [">=1.11.0"]
-      # compose-bom 2025.08+ pulls in Compose 1.9 / preview-SDK requirements.
-      - dependency-name: "androidx.compose:compose-bom"
-        versions: [">=2025.08.00"]
-
-  # GitHub Actions used by the workflows in this repo
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    multi-ecosystem-group: "all-updates"
-    patterns:
-      - "*"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 1
+    groups:
+      gradle:
+        patterns: ["*"]
+        update-types: ["major", "minor", "patch"]
