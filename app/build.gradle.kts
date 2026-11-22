@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId  = "io.github.johnathan.minesweeper"
-        minSdk         = 21
+        minSdk         = 23
         targetSdk      = 36
         versionCode    = 12
         versionName    = "1.11"
@@ -34,7 +34,7 @@ android {
 }
 
 dependencies {
-    val bom = platform("androidx.compose:compose-bom:2025.11.01")
+    val bom = platform("androidx.compose:compose-bom:2026.09.00")
     implementation(bom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
