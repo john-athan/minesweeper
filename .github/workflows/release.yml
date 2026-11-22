@@ -1,13 +1,14 @@
 name: Release
 
-# There is deliberately no signing step here. No signing secrets exist for this
-# repo, and F-Droid does not use an upstream signature for this app: its
-# metadata has no Binaries line and no AllowedAPKSigningKeys, so F-Droid builds
-# from the tag and signs with its own key. Attaching a self-signed APK would
-# only create a second identity for the app. This job builds the release APK
-# the way F-Droid does and prints its checksum, so a drifting build environment
-# shows up here before it shows up in an F-Droid build. If upstream signing is
-# ever adopted, copy the sign step from the nonius release workflow.
+# This job builds the release APK the way F-Droid does, JDK 21 Temurin and the
+# Gradle wrapper from the repo, and prints its checksum, so a drifting build
+# environment shows up here before it shows up in an F-Droid build.
+#
+# Whether the APK is also signed here is the upstream_signing var of this
+# project in oss-kit's fleet.json. Without it there is no signing step: F-Droid
+# builds from the tag and signs with its own key (its metadata has no Binaries
+# line and no AllowedAPKSigningKeys), and a self-signed APK attached here would
+# only create a second identity for the app.
 
 on:
   push:
@@ -19,7 +20,7 @@ permissions:
 
 jobs:
   apk:
-    name: Build the release APK
+    name: Release APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -40,5 +41,8 @@ jobs:
       - name: Build the release APK
         run: ./gradlew assembleRelease
 
+      # Printed on every run, a manual one included. It is the only way to see
+      # that this environment still produces the bytes F-Droid produces without
+      # waiting for a release to fail verification months from now.
       - name: Checksum of the unsigned APK
         run: sha256sum app/build/outputs/apk/release/app-release-unsigned.apk

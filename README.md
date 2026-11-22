@@ -12,7 +12,7 @@ No ads. No permissions. No analytics. No internet. Just the game.
 
 Every other Minesweeper on Android is either a privacy nightmare stuffed with ads and trackers, or a bare-bones port that looks like it was built in 2009. This one is neither.
 
-Built from scratch with Jetpack Compose and Material 3, it looks and feels like a first-party Google app. Material You dynamic colour adapts the entire palette to your wallpaper on Android 12+. Spring physics, ripple flood-fill animations, screen shake on game over.
+Built from scratch with Jetpack Compose and Material 3, it looks and feels like a first-party Google app. Material You dynamic colour adapts the entire palette to your wallpaper. Spring physics, ripple flood-fill animations, screen shake on game over.
 
 The three built-in difficulty modes are mechanically distinct, not just bigger grids:
 
@@ -44,7 +44,7 @@ A flag mode toggle above the board swaps tap and long-press: tap flags an unreve
 
 ## Building
 
-Requirements: JDK 21, Android SDK 37, Gradle (wrapper included).
+It runs on Android 16 or newer (minimum SDK 36); an older phone will not install it. Requirements to build: JDK 21, Android SDK 37 to compile against (the app itself targets 36), Gradle (wrapper included).
 
 ```bash
 git clone https://github.com/john-athan/minesweeper
@@ -67,9 +67,9 @@ Release build (unsigned):
 | Language | Kotlin 2.4.21 |
 | UI | Jetpack Compose (BOM 2026.09.00) |
 | Design system | Material 3 |
-| Dynamic colour | Material You (Android 12+) |
-| Build | AGP 9.4.1, Gradle 9.9.1 |
-| Min SDK | 23 (Android 6.0) |
+| Dynamic colour | Material You |
+| Build | AGP 9.5.2, Gradle 9.9.1 |
+| Min SDK | 36 (Android 16) |
 
 All dependencies are Apache 2.0 licensed (AndroidX / Jetpack). No third-party libraries, no trackers, no network calls of any kind.
 

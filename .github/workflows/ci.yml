@@ -9,16 +9,15 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  check:
     name: Unit tests + lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Project pins jvmToolchain(21) and sourceCompatibility 21; AGP 9.4.1 runs
-      # on JDK 17+. JDK 21 satisfies both the Gradle runtime and the Kotlin/Java
-      # toolchain, so no toolchain auto-provisioning is needed.
+      # The project pins jvmToolchain(21) and sourceCompatibility 21, and AGP 9
+      # runs on JDK 17+. JDK 21 satisfies both, so nothing has to be provisioned.
       - name: Set up JDK 21
         uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
@@ -26,8 +25,8 @@ jobs:
           java-version-file: .java-version
 
       # Provides the Android SDK (ANDROID_HOME) and accepts licenses so AGP can
-      # resolve compileSdk 37 platform + build-tools. Required: setup-gradle does
-      # not supply the Android SDK.
+      # resolve the compileSdk platform and build-tools. Required: setup-gradle
+      # does not supply the Android SDK.
       - name: Set up Android SDK
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
 
@@ -35,4 +34,4 @@ jobs:
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Run the project's own checks
-        run: tools/check.sh --stacktrace
+        run: tools/validate.sh --stacktrace

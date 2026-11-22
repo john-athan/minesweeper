@@ -2,7 +2,7 @@ Every other Minesweeper on Android is either a privacy nightmare stuffed with ad
 
 No ads. No permissions. No analytics. No internet. Just the game.
 
-Built with Jetpack Compose and Material 3, it looks and feels like a first-party Google app. Material You dynamic colour adapts the entire palette to your wallpaper on Android 12+.
+Built with Jetpack Compose and Material 3, it looks and feels like a first-party Google app. Material You dynamic colour adapts the entire palette to your wallpaper.
 
 The grid always fills the screen. Cells scale to any device. No zooming, no tiny tap targets.
 

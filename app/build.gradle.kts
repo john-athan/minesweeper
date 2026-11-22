@@ -9,7 +9,8 @@ android {
 
     defaultConfig {
         applicationId  = "io.github.johnathan.minesweeper"
-        minSdk         = 23
+        // One supported release, the current one: no version guards in the source.
+        minSdk         = 36
         targetSdk      = 36
         versionCode    = 13
         versionName    = "1.12"
@@ -41,7 +42,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.core:core-ktx:1.16.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 

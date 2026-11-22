@@ -1,7 +1,6 @@
 package com.minesweeper.ui.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -10,30 +9,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val scheme = darkColorScheme(
-    primary             = CyberCyan,
-    onPrimary           = SpaceBlack,
-    primaryContainer    = SlateBlue,
-    onPrimaryContainer  = SoftWhite,
-    secondary           = CoralRed,
-    onSecondary         = SpaceBlack,
-    background          = SpaceBlack,
-    onBackground        = SoftWhite,
-    surface             = DeepNavy,
-    surfaceVariant      = NavyBlue,
-    onSurface           = SoftWhite,
-    onSurfaceVariant    = MutedBlue,
-    error               = CoralRed,
-)
-
 @Composable
 fun MinesweeperTheme(content: @Composable () -> Unit) {
-    // Use Material You dynamic colour on Android 12+; fall back to custom dark scheme
-    val colorScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        dynamicDarkColorScheme(LocalContext.current)
-    } else {
-        scheme
-    }
+    // minSdk is 36, so Material You dynamic colour is always there.
+    val colorScheme = dynamicDarkColorScheme(LocalContext.current)
 
     val view = LocalView.current
     if (!view.isInEditMode) {
