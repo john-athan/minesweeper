@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace  = "com.minesweeper"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId  = "io.github.johnathan.minesweeper"
         minSdk         = 21
-        targetSdk      = 35
+        targetSdk      = 36
         versionCode    = 12
         versionName    = "1.11"
     }
@@ -34,7 +34,7 @@ android {
 }
 
 dependencies {
-    val bom = platform("androidx.compose:compose-bom:2025.07.00")
+    val bom = platform("androidx.compose:compose-bom:2025.11.01")
     implementation(bom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
