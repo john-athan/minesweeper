@@ -1,6 +1,10 @@
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/icon.png" width="96" alt="Minesweeper icon">
+</p>
+
 # Minesweeper
 
-A Minesweeper for Android that looks like a first-party app, asks for nothing, and plays differently by difficulty.
+**A Minesweeper for Android that looks like a first-party app, asks for nothing, and plays differently by difficulty.**
 
 No ads. No permissions. No analytics. No internet. Just the game.
 
