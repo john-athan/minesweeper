@@ -42,6 +42,17 @@ jobs:
       - name: Build the release APK
         run: ./gradlew assembleRelease
 
+      - name: Build installable debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: minesweeper-installable-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
       # Printed on every run, a manual one included. It is the only way to see
       # that this environment still produces the bytes F-Droid produces without
       # waiting for a release to fail verification months from now.
