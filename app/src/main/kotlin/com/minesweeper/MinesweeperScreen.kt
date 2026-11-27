@@ -35,6 +35,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.*
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
 import com.minesweeper.ui.theme.*
@@ -51,6 +53,7 @@ private val NUM_COLORS = arrayOf(
 @Composable
 internal fun GameBoardScreen(game: GameEngine, onBack: () -> Unit, audio: GameAudio, vibrationEnabled: Boolean) {
     val haptic = LocalHapticFeedback.current
+    val palette = LocalGamePalette.current
 
     // Custom-game config (issue #5). Remembers the last-used settings so the
     // dialog reopens where you left it.
@@ -123,11 +126,13 @@ internal fun GameBoardScreen(game: GameEngine, onBack: () -> Unit, audio: GameAu
             .fillMaxSize()
             .background(
                 Brush.radialGradient(
-                    colors = listOf(Color(0xFF0D1B2A), SpaceBlack),
+                    colors = listOf(palette.backgroundStart, palette.backgroundEnd),
                     radius = 1600f,
                 )
             )
-            .windowInsetsPadding(WindowInsets.systemBars),
+            // Keep display cutouts safe, but do not reintroduce status/navigation-bar
+            // padding: this screen runs in immersive fullscreen mode.
+            .windowInsetsPadding(WindowInsets.displayCutout),
     ) {
         Column(
             modifier = Modifier
@@ -135,20 +140,16 @@ internal fun GameBoardScreen(game: GameEngine, onBack: () -> Unit, audio: GameAu
                 .offset { IntOffset(shakeX.value.roundToInt(), 0) },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            GameHeader(game = game, onReset = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                game.newGame()
-            })
-
-            Spacer(Modifier.height(4.dp))
-            DifficultyBar(
-                selected = game.difficulty,
-                onSelect = {
+            GameHeader(
+                game = game,
+                onBack = onBack,
+                onReset = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    game.newGame(it)
+                    audio.menu()
+                    game.newGame()
                 },
-                onCustomClick = { showCustomDialog = true },
             )
+
             Spacer(Modifier.height(4.dp))
 
             // Fixed-height reserved slot for the status banner so the grid
@@ -157,7 +158,7 @@ internal fun GameBoardScreen(game: GameEngine, onBack: () -> Unit, audio: GameAu
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp),
+                    .height(62.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 StatusBanner(game.status, statsLine)
@@ -221,16 +222,28 @@ internal fun GameBoardScreen(game: GameEngine, onBack: () -> Unit, audio: GameAu
                             cellSize    = cellSize,
                             onTap       = {
                                 if (game.status == GameStatus.WON || game.status == GameStatus.LOST) return@CellView
+                                audio.tap()
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                val explodedBefore = game.cells.any { it.isExploded }
+                                val isRevealAction = !cell.isFogged && !cell.isFlagged &&
+                                    (cell.isRevealed || !flagMode)
                                 when {
                                     cell.isFogged   -> Unit  // can't interact with fogged cells
                                     cell.isRevealed -> game.chord(cell.row, cell.col)
                                     flagMode        -> game.toggleFlag(cell.row, cell.col)
                                     else            -> game.reveal(cell.row, cell.col)
                                 }
+                                val explosionTriggered = !explodedBefore && game.cells.any { it.isExploded }
+                                if (explosionTriggered) {
+                                    audio.explosion()
+                                    if (vibrationEnabled) triggerMineVibration(context)
+                                } else if (isRevealAction) {
+                                    audio.reveal()
+                                }
                             },
                             onLongPress = {
                                 if (game.status == GameStatus.WON || game.status == GameStatus.LOST) return@CellView
+                                audio.tap()
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 // Flag mode swaps the two gestures: long press
                                 // takes over the plain tap's reveal (issue: flag mode).
@@ -246,13 +259,7 @@ internal fun GameBoardScreen(game: GameEngine, onBack: () -> Unit, audio: GameAu
                 }
             }
 
-            TextButton(onClick = { showLicenses = true }) {
-                Text(
-                    "Licenses",
-                    fontSize = 11.sp,
-                    color    = Color.White.copy(alpha = 0.35f),
-                )
-            }
+            AuthorLink(modifier = Modifier.padding(vertical = 4.dp))
         }
     }
 }
@@ -263,7 +270,7 @@ internal fun GameBoardScreen(game: GameEngine, onBack: () -> Unit, audio: GameAu
 // network, which is also what F-Droid expects.
 
 @Composable
-private fun LicensesDialog(onDismiss: () -> Unit) {
+internal fun LicensesDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val text = remember {
         context.resources.openRawResource(R.raw.licenses)
@@ -294,52 +301,57 @@ private fun LicensesDialog(onDismiss: () -> Unit) {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun GameHeader(game: GameEngine, onReset: () -> Unit) {
+private fun GameHeader(game: GameEngine, onBack: () -> Unit, onReset: () -> Unit) {
+    val palette = LocalGamePalette.current
     val face = when (game.status) {
-        GameStatus.WON     -> "😎"
-        GameStatus.LOST    -> "😵"
-        GameStatus.PLAYING -> "🙂"
-        GameStatus.IDLE    -> "😊"
+        GameStatus.WON -> if (palette.pixel) "^_^" else "😎"
+        GameStatus.LOST -> if (palette.pixel) "x_x" else "😵"
+        GameStatus.PLAYING -> if (palette.pixel) ">_<" else "🙂"
+        GameStatus.IDLE -> if (palette.pixel) "o_o" else "😊"
     }
-
-    // Blinking countdown when time is low
     val infiniteTransition = rememberInfiniteTransition(label = "timeLow")
     val blinkAlpha by infiniteTransition.animateFloat(
-        initialValue  = 0.5f,
-        targetValue   = 1f,
+        initialValue = 0.5f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(400), RepeatMode.Reverse),
-        label         = "blinkAlpha",
+        label = "blinkAlpha",
     )
     val timerColor = when {
-        game.isTimeLow                         -> Color(0xFFFF3B30).copy(alpha = blinkAlpha)
+        game.isTimeLow -> Color(0xFFFF3B30).copy(alpha = blinkAlpha)
         game.difficulty.countdownSeconds != null -> Color(0xFFFF9500)
-        else                                   -> Color(0xFFFF3B30)
+        else -> Color(0xFFFF3B30)
     }
-
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment         = Alignment.CenterVertically,
-        horizontalArrangement     = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        LedDisplay(
-            text  = game.minesLeft.coerceIn(-99, 999).toString().padStart(3),
-            color = Color(0xFFFF3B30),
-        )
-
         Surface(
-            onClick        = onReset,
-            shape          = RoundedCornerShape(14.dp),
-            color          = Color(0xFF1B2B3C),
-            tonalElevation = 4.dp,
-            modifier       = Modifier.size(50.dp),
+            onClick = onBack,
+            shape = RoundedCornerShape(if (palette.pixel) 2.dp else 9.dp),
+            color = palette.panel,
+            border = androidx.compose.foundation.BorderStroke(1.dp, palette.muted.copy(alpha = 0.28f)),
+            modifier = Modifier.size(38.dp),
         ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                Text(face, fontSize = 24.sp)
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(if (palette.pixel) "<" else "‹", color = palette.text, fontSize = 23.sp, fontWeight = FontWeight.Bold)
             }
         }
-
+        LedDisplay(
+            text = game.minesLeft.coerceIn(-99, 999).toString().padStart(3),
+            color = Color(0xFFFF3B30),
+        )
+        Surface(
+            onClick = onReset,
+            shape = RoundedCornerShape(if (palette.pixel) 2.dp else 14.dp),
+            color = palette.surface,
+            tonalElevation = if (palette.pixel) 0.dp else 4.dp,
+            modifier = Modifier.size(48.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                Text(face, fontSize = if (palette.pixel) 17.sp else 23.sp, fontFamily = if (palette.pixel) FontFamily.Monospace else FontFamily.Default)
+            }
+        }
         LedDisplay(text = game.formattedTime, color = timerColor)
     }
 }
@@ -349,7 +361,7 @@ private fun LedDisplay(text: String, color: Color) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF040710))
+            .background(LocalGamePalette.current.digitBackground)
             .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
         SevenSegment(text = text, color = color)
@@ -504,29 +516,26 @@ private fun RowScope.DifficultyTab(
 
 @Composable
 private fun FlagModeToggle(active: Boolean, onToggle: () -> Unit) {
-    val bg by animateColorAsState(
-        if (active) CyberCyan else Color(0xFF1B2B3C), tween(250), label = "flagBg"
-    )
-    val fg by animateColorAsState(
-        if (active) SpaceBlack else MutedBlue, tween(250), label = "flagFg"
-    )
+    val palette = LocalGamePalette.current
+    val bg by animateColorAsState(if (active) palette.accent else palette.surface, tween(250), label = "flagBg")
+    val fg by animateColorAsState(if (active) palette.accentText else palette.muted, tween(250), label = "flagFg")
     Box(
         modifier = Modifier
             .size(36.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(if (palette.pixel) 1.dp else 10.dp))
             .background(bg)
             .semantics { contentDescription = "Flag mode" }
             .pointerInput(Unit) { detectTapGestures(onTap = { onToggle() }) },
         contentAlignment = Alignment.Center,
     ) {
-        Text("⚑", fontSize = 18.sp, color = fg)
+        Text(if (palette.pixel) "P" else "⚑", fontSize = 18.sp, color = fg, fontFamily = if (palette.pixel) FontFamily.Monospace else FontFamily.Default)
     }
 }
 
 // ── Custom config dialog (issue #5) ─────────────────────────────────────────────
 
 @Composable
-private fun CustomConfigDialog(
+internal fun CustomConfigDialog(
     initial: Difficulty,
     onDismiss: () -> Unit,
     onConfirm: (Difficulty) -> Unit,
@@ -535,6 +544,7 @@ private fun CustomConfigDialog(
     var mines     by remember { mutableStateOf(initial.mines) }
     var fog       by remember { mutableStateOf(initial.fogSeconds != null) }
     var safeStart by remember { mutableStateOf(initial.safeRadius >= 0) }
+    val palette = LocalGamePalette.current
 
     // The same ceiling the engine enforces, so the slider cannot offer a count
     // that gets silently clamped away on Start.
@@ -546,16 +556,16 @@ private fun CustomConfigDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = NavyBlue,
-        titleContentColor   = SoftWhite,
-        textContentColor    = MutedBlue,
+        containerColor   = palette.panel,
+        titleContentColor   = palette.text,
+        textContentColor    = palette.muted,
         confirmButton = {
             TextButton(onClick = {
                 onConfirm(Difficulty.custom(size, safeMines, fog, safeStart))
-            }) { Text("Start", color = CyberCyan, fontWeight = FontWeight.Bold) }
+            }) { Text("Start", color = palette.accent, fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = MutedBlue) }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = palette.muted) }
         },
         title = { Text("Custom Game") },
         text  = {
@@ -598,8 +608,8 @@ private fun SliderRow(label: String, value: String, slider: @Composable () -> Un
         modifier              = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(label, color = SoftWhite, fontSize = 14.sp)
-        Text(value, color = CyberCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = LocalGamePalette.current.text, fontSize = 14.sp)
+        Text(value, color = LocalGamePalette.current.accent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
     }
     slider()
 }
@@ -611,15 +621,15 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(label, color = SoftWhite, fontSize = 14.sp)
+        Text(label, color = LocalGamePalette.current.text, fontSize = 14.sp)
         Switch(
             checked         = checked,
             onCheckedChange = onChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor   = SpaceBlack,
-                checkedTrackColor   = CyberCyan,
-                uncheckedThumbColor = MutedBlue,
-                uncheckedTrackColor = Color(0xFF1B2B3C),
+                checkedThumbColor   = LocalGamePalette.current.accentText,
+                checkedTrackColor   = LocalGamePalette.current.accent,
+                uncheckedThumbColor = LocalGamePalette.current.muted,
+                uncheckedTrackColor = LocalGamePalette.current.surface,
             ),
         )
     }
@@ -627,53 +637,65 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
 
 @Composable
 private fun sliderColors() = SliderDefaults.colors(
-    thumbColor       = CyberCyan,
-    activeTrackColor = CyberCyan,
-    inactiveTrackColor = Color(0xFF1B2B3C),
+    thumbColor       = LocalGamePalette.current.accent,
+    activeTrackColor = LocalGamePalette.current.accent,
+    inactiveTrackColor = LocalGamePalette.current.surface,
 )
 
 // ── Status banner ─────────────────────────────────────────────────────────────
 
 @Composable
 private fun StatusBanner(status: GameStatus, statsLine: String?) {
+    val palette = LocalGamePalette.current
     val visible = status == GameStatus.WON || status == GameStatus.LOST
-    val bg      = if (status == GameStatus.WON) Color(0xFF0E3A20) else Color(0xFF3D0808)
-    val text    = if (status == GameStatus.WON) "🎉  You Win!  🎉" else "💥  Game Over  💥"
-
+    val bg = if (status == GameStatus.WON) palette.winBackground else palette.lossBackground
+    val text = when {
+        palette.pixel && status == GameStatus.WON -> "★  YOU WIN  ★"
+        palette.pixel -> "☠  GAME OVER  ☠"
+        status == GameStatus.WON -> "🎉  You Win!  🎉"
+        else -> "💥  Game Over  💥"
+    }
+    val fg = if (palette.pixel) palette.accent else palette.text
     val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
-        initialValue  = 0.75f,
-        targetValue   = 1f,
+        initialValue = 0.78f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(650), RepeatMode.Reverse),
-        label         = "bannerAlpha",
+        label = "bannerAlpha",
     )
-
     AnimatedVisibility(
         visible = visible,
-        enter   = slideInVertically { -it } + fadeIn(),
-        exit    = slideOutVertically { -it } + fadeOut(),
+        enter = slideInVertically { -it } + fadeIn(),
+        exit = slideOutVertically { -it } + fadeOut(),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(if (palette.pixel) 1.dp else 10.dp))
                 .background(bg),
             contentAlignment = Alignment.Center,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(horizontal = 7.dp)) {
                 Text(
-                    text       = text,
-                    style      = MaterialTheme.typography.titleMedium,
-                    color      = SoftWhite.copy(alpha = pulse),
+                    text = text,
+                    color = fg.copy(alpha = pulse),
+                    fontSize = if (palette.pixel) 14.sp else 16.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier   = Modifier.padding(top = 8.dp, bottom = if (statsLine != null) 0.dp else 8.dp),
+                    fontFamily = if (palette.pixel) FontFamily.Monospace else FontFamily.Default,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = if (statsLine != null) 0.dp else 6.dp),
                 )
                 if (statsLine != null) {
                     Text(
-                        text     = statsLine,
-                        style    = MaterialTheme.typography.bodySmall,
-                        color    = SoftWhite.copy(alpha = pulse),
-                        modifier = Modifier.padding(bottom = 6.dp),
+                        text = statsLine,
+                        color = fg.copy(alpha = pulse * 0.88f),
+                        fontSize = 10.sp,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp),
                     )
                 }
             }
@@ -698,6 +720,8 @@ private fun CellView(
     onTap:       () -> Unit,
     onLongPress: () -> Unit,
 ) {
+    val palette = LocalGamePalette.current
+
     // Pop-in when revealed
     val popScale = remember(cell.row, cell.col) { Animatable(if (cell.isRevealed) 1f else 0f) }
     LaunchedEffect(cell.isRevealed) {
@@ -765,7 +789,7 @@ private fun CellView(
     ) {
         // ── Canvas background ─────────────────────────────────────────────────
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val cr = CornerRadius(4.dp.toPx())
+            val cr = CornerRadius(if (palette.pixel) 0f else 4.dp.toPx())
             val w  = size.width
             val h  = size.height
 
@@ -797,7 +821,7 @@ private fun CellView(
                     drawCellShadow(w, h, cr)
                     drawRoundRect(
                         brush = Brush.linearGradient(
-                            colors = listOf(Color(0xFF253648), Color(0xFF1B2B3C)),
+                            colors = listOf(palette.cellTop, palette.cellBottom),
                             start  = Offset(0f, 0f), end = Offset(w, h),
                         ),
                         size         = Size(w - 1.5f, h - 1.5f),
@@ -831,7 +855,7 @@ private fun CellView(
 
                 // ── Revealed safe ─────────────────────────────────────────────
                 else -> {
-                    drawRoundRect(color = DeepNavy, cornerRadius = cr)
+                    drawRoundRect(color = palette.cellOpen, cornerRadius = cr)
                     drawRoundRect(color = Color(0x18FFFFFF), style = Stroke(1f), cornerRadius = cr)
                 }
             }
@@ -845,21 +869,21 @@ private fun CellView(
                 Text("·", fontSize = fs * 0.6f, color = Color(0x558090FF))
 
             cell.isFlagged && !cell.isRevealed ->
-                Text("⚑", fontSize = fs, color = Color(0xFFFF6B35),
+                Text(if (palette.pixel) "P" else "⚑", fontSize = fs, color = if (palette.pixel) palette.accent else Color(0xFFFF6B35), fontFamily = if (palette.pixel) FontFamily.Monospace else FontFamily.Default,
                     modifier = Modifier.scale(flagScale.value.coerceAtLeast(0f)))
 
             cell.isRevealed && cell.isExploded ->
-                Text("💥", fontSize = fs)
+                Text(if (palette.pixel) "✹" else "💥", fontSize = fs, color = if (palette.pixel) palette.accent else palette.text, fontFamily = if (palette.pixel) FontFamily.Monospace else FontFamily.Default)
 
             cell.isRevealed && cell.isMine ->
-                Text("💣", fontSize = fs * 0.85f)
+                Text(if (palette.pixel) "✖" else "💣", fontSize = fs * 0.85f, color = if (palette.pixel) palette.accent else palette.text, fontFamily = if (palette.pixel) FontFamily.Monospace else FontFamily.Default)
 
             cell.isRevealed && cell.neighborMines > 0 ->
                 Text(
                     text          = cell.neighborMines.toString(),
                     fontSize      = fs,
                     fontWeight    = FontWeight.ExtraBold,
-                    color         = NUM_COLORS[cell.neighborMines],
+                    color         = palette.numberColors[cell.neighborMines],
                     fontFamily    = FontFamily.Monospace,
                     letterSpacing = 0.sp,
                 )

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -207,6 +208,7 @@ private fun MainMenuScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.displayCutout)
                 .padding(horizontal = 30.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -263,6 +265,7 @@ private fun DifficultyPickerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.displayCutout)
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -309,7 +312,9 @@ private fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Brush.radialGradient(listOf(palette.backgroundStart, palette.backgroundEnd), radius = 1500f))
-            .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .windowInsetsPadding(WindowInsets.displayCutout)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 22.dp, vertical = 18.dp),
     ) {
         MenuBackButton("‹  BACK", palette, onBack)
@@ -400,7 +405,7 @@ private fun SettingsScreen(
             )
         }
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(18.dp))
         MenuActionButton("Licenses", false, palette, onLicenses, subtitle = "Open third-party license notices")
         Spacer(Modifier.height(12.dp))
         AuthorLink()
@@ -498,7 +503,7 @@ internal fun AuthorLink(modifier: Modifier = Modifier) {
     val palette = LocalGamePalette.current
     val uriHandler = LocalUriHandler.current
     Row(
-        modifier = modifier.clickable { uriHandler.openUri("https://github.com/john-athan") }.padding(6.dp),
+        modifier = modifier.clickable { uriHandler.openUri("https://github.com/ofand04") }.padding(6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -506,13 +511,13 @@ internal fun AuthorLink(modifier: Modifier = Modifier) {
         Spacer(Modifier.width(5.dp))
         androidx.compose.foundation.Image(
             painter = painterResource(R.drawable.ic_github),
-            contentDescription = "Open John Athan's GitHub profile",
+            contentDescription = "Open ofand04's GitHub profile",
             modifier = Modifier.size(16.dp),
             colorFilter = ColorFilter.tint(palette.muted),
         )
         Spacer(Modifier.width(5.dp))
         Text(
-            "john-athan",
+            "ofand04",
             color = palette.text,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
