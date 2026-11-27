@@ -12,6 +12,7 @@ name: Release
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
@@ -46,3 +47,11 @@ jobs:
       # waiting for a release to fail verification months from now.
       - name: Checksum of the unsigned APK
         run: sha256sum app/build/outputs/apk/release/app-release-unsigned.apk
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v4.6.2
+        with:
+          name: minesweeper-release-apk
+          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error
+          retention-days: 14
