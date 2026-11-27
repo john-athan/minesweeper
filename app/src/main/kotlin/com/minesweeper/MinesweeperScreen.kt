@@ -49,7 +49,7 @@ private val NUM_COLORS = arrayOf(
 // ── Root ──────────────────────────────────────────────────────────────────────
 
 @Composable
-fun MinesweeperApp(game: GameEngine) {
+internal fun GameBoardScreen(game: GameEngine, onBack: () -> Unit, audio: GameAudio, vibrationEnabled: Boolean) {
     val haptic = LocalHapticFeedback.current
 
     // Custom-game config (issue #5). Remembers the last-used settings so the
