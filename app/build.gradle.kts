@@ -10,7 +10,7 @@ android {
     defaultConfig {
         applicationId  = "io.github.johnathan.minesweeper"
         // One supported release, the current one: no version guards in the source.
-        minSdk         = 36
+        minSdk         = 35
         targetSdk      = 36
         versionCode    = 14
         versionName    = "1.13"
