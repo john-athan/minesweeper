@@ -158,7 +158,7 @@ internal fun GameBoardScreen(game: GameEngine, onBack: () -> Unit, audio: GameAu
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(62.dp),
+                    .height(76.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 StatusBanner(game.status, statsLine)
@@ -485,7 +485,7 @@ private fun RowScope.DifficultyTab(
         if (active) CyberCyan else Color(0xFF1B2B3C), tween(250), label = "bg"
     )
     val fg by animateColorAsState(
-        if (active) SpaceBlack else MutedBlue, tween(250), label = "fg"
+        if (active) SpaceBlack else Color(0xFFEAF2FF), tween(250), label = "fg"
     )
     Box(
         modifier = Modifier
@@ -493,7 +493,7 @@ private fun RowScope.DifficultyTab(
             .clip(RoundedCornerShape(10.dp))
             .background(bg)
             .pointerInput(Unit) { detectTapGestures(onTap = { onTap() }) }
-            .padding(vertical = 8.dp),
+            .padding(vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -690,11 +690,12 @@ private fun StatusBanner(status: GameStatus, statsLine: String?) {
                 if (statsLine != null) {
                     Text(
                         text = statsLine,
-                        color = fg.copy(alpha = pulse * 0.88f),
-                        fontSize = 10.sp,
+                        color = fg,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 2,
+                        overflow = TextOverflow.Clip,
                         modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp),
                     )
                 }

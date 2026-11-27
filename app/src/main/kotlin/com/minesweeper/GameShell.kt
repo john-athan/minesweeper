@@ -449,7 +449,7 @@ private fun MenuActionButton(
         border = BorderStroke(1.dp, if (accent) palette.accent else palette.muted.copy(alpha = 0.35f)),
         modifier = Modifier
             .fillMaxWidth()
-            .height(if (subtitle == null) 56.dp else 62.dp)
+            .height(if (subtitle == null) 64.dp else 76.dp)
             .scale(if (palette.pixel) pulse else 1f),
         shadowElevation = if (accent && !palette.pixel) 8.dp else 0.dp,
     ) {
@@ -504,21 +504,21 @@ internal fun AuthorLink(modifier: Modifier = Modifier) {
     val palette = LocalGamePalette.current
     val uriHandler = LocalUriHandler.current
     Row(
-        modifier = modifier.clickable { uriHandler.openUri("https://github.com/ofand04") }.padding(6.dp),
+        modifier = modifier.fillMaxWidth().clickable { uriHandler.openUri("https://github.com/john-athan/minesweeper") }.padding(6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.End,
     ) {
-        Text("by", color = palette.muted, fontSize = 11.sp)
-        Spacer(Modifier.width(5.dp))
         androidx.compose.foundation.Image(
             painter = painterResource(R.drawable.ic_github),
-            contentDescription = "Open ofand04's GitHub profile",
+            contentDescription = "Open original Minesweeper repository",
             modifier = Modifier.size(16.dp),
             colorFilter = ColorFilter.tint(palette.muted),
         )
         Spacer(Modifier.width(5.dp))
+        Text("by", color = palette.muted, fontSize = 11.sp)
+        Spacer(Modifier.width(5.dp))
         Text(
-            "ofand04",
+            "john-athan",
             color = palette.text,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
